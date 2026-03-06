@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import type { AnalysisResult, ProfileAnalysisResult, ProfileScore, UserPurpose } from "@shared/schema";
+import type { AnalysisResult, ProfileAnalysisResultFull, ProfileScore, UserPurpose } from "@shared/schema";
 import { ScanInput } from "@/components/scan-input";
 import { RepoStats } from "@/components/repo-stats";
 import { RepoScoreCard } from "@/components/repo-score";
@@ -25,6 +25,8 @@ import { TeamFit } from "@/components/team-fit";
 import { ScoringWeights } from "@/components/scoring-weights";
 import { CompareCandidates } from "@/components/compare-candidates";
 import { ProfileTips } from "@/components/profile-tips";
+import { ContributionHeatmap } from "@/components/contribution-heatmap";
+import { SkillsRadar } from "@/components/skills-radar";
 import { exportProfilePDF, exportRepoPDF } from "@/lib/export-pdf";
 import { Loader2, GitBranch, FileText, Download, UserPlus, Briefcase, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -36,8 +38,8 @@ const PURPOSE_STORAGE_KEY = "reposcan-purpose";
 export default function Dashboard() {
   const [viewMode, setViewMode] = useState<ViewMode>("idle");
   const [repoResult, setRepoResult] = useState<AnalysisResult | null>(null);
-  const [profileResult, setProfileResult] = useState<ProfileAnalysisResult | null>(null);
-  const [compareList, setCompareList] = useState<ProfileAnalysisResult[]>([]);
+  const [profileResult, setProfileResult] = useState<ProfileAnalysisResultFull | null>(null);
+  const [compareList, setCompareList] = useState<ProfileAnalysisResultFull[]>([]);
   const [customScore, setCustomScore] = useState<{ total: number; label: ProfileScore["label"] } | null>(null);
   const [purpose, setPurpose] = useState<UserPurpose | null>(() => {
     try {
@@ -70,7 +72,7 @@ export default function Dashboard() {
   const profileMutation = useMutation({
     mutationFn: async (username: string) => {
       const res = await apiRequest("POST", "/api/profile", { username });
-      return (await res.json()) as ProfileAnalysisResult;
+      return (await res.json()) as ProfileAnalysisResultFull;
     },
     onSuccess: (data) => {
       setProfileResult(data);
@@ -399,6 +401,9 @@ export default function Dashboard() {
                     candidateLanguages={profileResult.languages}
                   />
                 )}
+                {profileResult.contributionHeatmap && profileResult.contributionHeatmap.length > 0 && (
+                  <ContributionHeatmap data={profileResult.contributionHeatmap} />
+                )}
                 <ProfileRepos
                   repos={profileResult.repos}
                   onAnalyzeRepo={handleAnalyzeRepo}
@@ -414,6 +419,9 @@ export default function Dashboard() {
                     breakdown={profileResult.profileScore.breakdown}
                     onScoreChange={(total, label) => setCustomScore({ total, label })}
                   />
+                )}
+                {profileResult.skillDomains && profileResult.skillDomains.length > 0 && (
+                  <SkillsRadar domains={profileResult.skillDomains} />
                 )}
                 <SkillsOverview
                   primarySkills={profileResult.hiringInsights.primarySkills}

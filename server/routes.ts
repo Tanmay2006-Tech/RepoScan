@@ -17,6 +17,9 @@ import type {
   ProfileAnalysisResult,
   ProfileScore,
   HiringInsights,
+  ContributionDay,
+  SkillDomain,
+  ProfileAnalysisResultFull,
 } from "@shared/schema";
 
 const GITHUB_API = "https://api.github.com";
@@ -562,6 +565,84 @@ function generateHiringInsights(
   };
 }
 
+const SKILL_DOMAIN_MAP: Record<string, string[]> = {
+  "Frontend": ["JavaScript", "TypeScript", "HTML", "CSS", "Vue", "Svelte", "SCSS", "Less", "Astro"],
+  "Backend": ["Python", "Java", "Go", "Ruby", "PHP", "Elixir", "Scala", "Clojure", "Groovy", "Perl"],
+  "Systems": ["C", "C++", "Rust", "Assembly", "Zig", "Nim", "D"],
+  "Mobile": ["Swift", "Kotlin", "Dart", "Objective-C", "Java"],
+  "Data & ML": ["Python", "R", "Julia", "Jupyter Notebook", "MATLAB"],
+  "DevOps": ["Shell", "Dockerfile", "HCL", "Nix", "PowerShell", "Makefile"],
+};
+
+function buildSkillDomains(languages: LanguageBreakdown): SkillDomain[] {
+  const totalRepos = Object.values(languages).reduce((s, c) => s + c, 0);
+  if (totalRepos === 0) return [];
+
+  const domains: SkillDomain[] = [];
+  for (const [domain, domainLangs] of Object.entries(SKILL_DOMAIN_MAP)) {
+    const matched: string[] = [];
+    let count = 0;
+    for (const lang of domainLangs) {
+      if (languages[lang]) {
+        matched.push(lang);
+        count += languages[lang];
+      }
+    }
+    if (matched.length > 0) {
+      const raw = (count / totalRepos) * 100;
+      const score = Math.min(100, Math.round(raw * 2.5));
+      domains.push({ domain, score, languages: matched });
+    }
+  }
+  return domains.sort((a, b) => b.score - a.score);
+}
+
+async function fetchContributionHeatmap(username: string): Promise<ContributionDay[]> {
+  try {
+    const pages = await Promise.all([
+      githubFetch(`/users/${username}/events?per_page=100&page=1`).catch(() => []),
+      githubFetch(`/users/${username}/events?per_page=100&page=2`).catch(() => []),
+      githubFetch(`/users/${username}/events?per_page=100&page=3`).catch(() => []),
+    ]);
+    const allEvents: any[] = [];
+    for (const page of pages) {
+      if (Array.isArray(page)) {
+        allEvents.push(...page);
+      }
+    }
+
+    const dayMap = new Map<string, number>();
+
+    const now = new Date();
+    for (let i = 0; i < 90; i++) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      dayMap.set(key, 0);
+    }
+
+    for (const event of allEvents) {
+      if (!event.created_at) continue;
+      const date = event.created_at.slice(0, 10);
+      if (dayMap.has(date)) {
+        const weight = event.type === "PushEvent"
+          ? (event.payload?.commits?.length || 1)
+          : 1;
+        dayMap.set(date, (dayMap.get(date) || 0) + weight);
+      }
+    }
+
+    const result: ContributionDay[] = [];
+    const entries = [...dayMap.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+    for (const [date, count] of entries) {
+      result.push({ date, count });
+    }
+    return result;
+  } catch {
+    return [];
+  }
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express,
@@ -806,14 +887,19 @@ export async function registerRoutes(
         },
       };
 
-      const pinnedRepoNames = await fetchPinnedRepoNames(username);
+      const [pinnedRepoNames, contributionHeatmap] = await Promise.all([
+        fetchPinnedRepoNames(username),
+        fetchContributionHeatmap(username),
+      ]);
 
       const hiringInsights = generateHiringInsights(
         user, ownRepos, repos, totalStars, totalForks, topLanguages,
         accountAgeDays, avgStarsPerRepo, profileScore, activityTimeline, pinnedRepoNames
       );
 
-      const result: ProfileAnalysisResult = {
+      const skillDomains = buildSkillDomains(languages);
+
+      const result: ProfileAnalysisResultFull = {
         user,
         repos: ownRepos,
         totalStars,
@@ -825,6 +911,8 @@ export async function registerRoutes(
         profileScore,
         activityTimeline,
         hiringInsights,
+        contributionHeatmap,
+        skillDomains,
       };
 
       return res.json(result);

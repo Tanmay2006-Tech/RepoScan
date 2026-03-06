@@ -43,6 +43,8 @@ On first visit, users choose "I'm Hiring" or "I'm a Developer". This changes the
 9. **README Summary** - Parsed with overview, installation, usage tabs
 
 ### Cross-cutting Features
+- **Contribution Heatmap** - GitHub-style calendar grid showing daily activity from last 90 days (Events API, 3 pages)
+- **Skills Radar Chart** - SVG spider chart mapping languages to 6 skill domains (Frontend, Backend, Systems, Mobile, Data & ML, DevOps)
 - **Export to PDF** - Professional PDF reports for both modes
 - **Dark Mode** - Light/dark toggle persisted in localStorage
 - **Search History** - Recent searches (max 10) with dropdown on focus
@@ -56,6 +58,8 @@ client/src/lib/
   export-pdf.ts            - PDF generation
   search-history.ts        - localStorage search history
 client/src/components/
+  contribution-heatmap.tsx - GitHub-style activity heatmap (90 days, SVG)
+  skills-radar.tsx         - Spider/radar chart of skill domains (SVG)
   scan-input.tsx           - Dual-mode input + search history dropdown
   hiring-assessment.tsx    - Assessment card (adapts language for HR vs developer)
   profile-tips.tsx         - Developer-only improvement tips with numbered action items

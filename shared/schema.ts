@@ -193,4 +193,20 @@ export interface HiringInsights {
   summary: string;
 }
 
+export interface ContributionDay {
+  date: string;
+  count: number;
+}
+
+export interface SkillDomain {
+  domain: string;
+  score: number;
+  languages: string[];
+}
+
+export interface ProfileAnalysisResultFull extends ProfileAnalysisResult {
+  contributionHeatmap: ContributionDay[];
+  skillDomains: SkillDomain[];
+}
+
 export type UserPurpose = "hr" | "candidate";
