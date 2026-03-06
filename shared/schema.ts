@@ -163,6 +163,7 @@ export interface ProfileAnalysisResult {
   avgStarsPerRepo: number;
   profileScore: ProfileScore;
   activityTimeline: { month: string; repos: number }[];
+  hiringInsights: HiringInsights;
 }
 
 export interface ProfileScore {
@@ -175,4 +176,17 @@ export interface ProfileScore {
     diversity: number;
     consistency: number;
   };
+}
+
+export interface HiringInsights {
+  recommendation: "Strongly Recommend" | "Recommend" | "Consider" | "Needs Review";
+  strengths: string[];
+  concerns: string[];
+  experienceLevel: "Senior" | "Mid-Level" | "Junior" | "Entry-Level";
+  primarySkills: string[];
+  repoQuality: "High" | "Above Average" | "Average" | "Below Average";
+  collaborationIndicator: "Strong" | "Moderate" | "Limited";
+  projectDiversity: "Broad" | "Moderate" | "Narrow";
+  topProjects: { name: string; stars: number; language: string | null; description: string | null }[];
+  summary: string;
 }

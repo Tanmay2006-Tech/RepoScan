@@ -16,6 +16,7 @@ import type {
   UserRepoSummary,
   ProfileAnalysisResult,
   ProfileScore,
+  HiringInsights,
 } from "@shared/schema";
 
 const GITHUB_API = "https://api.github.com";
@@ -338,6 +339,132 @@ function parseReadme(raw: string): ReadmeSummary {
   return { raw, description, installation, usage };
 }
 
+function generateHiringInsights(
+  user: GitHubUserProfile,
+  repos: UserRepoSummary[],
+  totalStars: number,
+  totalForks: number,
+  topLanguages: string[],
+  accountAgeDays: number,
+  avgStarsPerRepo: number,
+  profileScore: ProfileScore,
+  activityTimeline: { month: string; repos: number }[],
+): HiringInsights {
+  const strengths: string[] = [];
+  const concerns: string[] = [];
+
+  const accountYears = Math.floor(accountAgeDays / 365);
+  let experienceLevel: HiringInsights["experienceLevel"];
+  if (accountYears >= 5 && (repos.length >= 15 || user.followers >= 100 || totalStars >= 100)) experienceLevel = "Senior";
+  else if (accountYears >= 3 && (repos.length >= 8 || user.followers >= 20 || totalStars >= 20)) experienceLevel = "Mid-Level";
+  else if (accountYears >= 1 && (repos.length >= 3 || user.followers >= 5)) experienceLevel = "Junior";
+  else experienceLevel = "Entry-Level";
+
+  if (repos.length >= 20) strengths.push("Extensive project portfolio with " + repos.length + " repositories");
+  else if (repos.length >= 10) strengths.push("Solid project portfolio with " + repos.length + " repositories");
+  else if (repos.length >= 5) strengths.push("Growing portfolio with " + repos.length + " repositories");
+
+  if (totalStars >= 100) strengths.push("Strong community recognition with " + totalStars + " total stars");
+  else if (totalStars >= 10) strengths.push("Some community engagement with " + totalStars + " stars earned");
+
+  if (topLanguages.length >= 4) strengths.push("Versatile developer proficient in " + topLanguages.slice(0, 4).join(", "));
+  else if (topLanguages.length >= 2) strengths.push("Skills in " + topLanguages.join(" and "));
+
+  if (user.followers >= 50) strengths.push("Notable community presence with " + user.followers + " followers");
+  else if (user.followers >= 10) strengths.push("Developing community presence");
+
+  if (totalForks >= 20) strengths.push("Projects are widely forked, indicating useful work");
+  else if (totalForks >= 5) strengths.push("Projects have been forked by other developers");
+
+  if (accountYears >= 3) strengths.push("Consistent GitHub presence over " + accountYears + " years");
+
+  const recentMonths = activityTimeline.slice(-6);
+  const activeMonths = recentMonths.filter(m => m.repos > 0).length;
+  if (activeMonths >= 5) strengths.push("Highly active in the last 6 months");
+  else if (activeMonths >= 3) strengths.push("Regularly active in recent months");
+
+  const hasDescriptions = repos.filter(r => r.description).length;
+  const descRatio = repos.length > 0 ? hasDescriptions / repos.length : 0;
+  if (descRatio >= 0.7) strengths.push("Well-documented projects with clear descriptions");
+
+  if (repos.length < 3) concerns.push("Limited public repository portfolio");
+  if (totalStars === 0 && repos.length > 0) concerns.push("No community engagement through stars yet");
+  if (topLanguages.length <= 1) concerns.push("Limited language diversity — may indicate narrow focus");
+  if (activeMonths <= 1) concerns.push("Low recent activity on GitHub");
+  if (accountYears < 1) concerns.push("Relatively new GitHub account (less than 1 year)");
+  if (descRatio < 0.3 && repos.length >= 3) concerns.push("Most repositories lack descriptions — may indicate limited documentation habits");
+  if (user.followers === 0 && repos.length >= 5) concerns.push("No followers despite having multiple projects");
+
+  let repoQuality: HiringInsights["repoQuality"];
+  if (avgStarsPerRepo >= 10 || (descRatio >= 0.7 && repos.length >= 5)) repoQuality = "High";
+  else if (avgStarsPerRepo >= 2 || descRatio >= 0.5) repoQuality = "Above Average";
+  else if (repos.length >= 3) repoQuality = "Average";
+  else repoQuality = "Below Average";
+
+  let collaborationIndicator: HiringInsights["collaborationIndicator"];
+  if (totalForks >= 20 || user.followers >= 50) collaborationIndicator = "Strong";
+  else if (totalForks >= 5 || user.followers >= 10) collaborationIndicator = "Moderate";
+  else collaborationIndicator = "Limited";
+
+  let projectDiversity: HiringInsights["projectDiversity"];
+  if (topLanguages.length >= 4) projectDiversity = "Broad";
+  else if (topLanguages.length >= 2) projectDiversity = "Moderate";
+  else projectDiversity = "Narrow";
+
+  const topProjects = [...repos]
+    .sort((a, b) => b.stargazers_count - a.stargazers_count)
+    .slice(0, 5)
+    .map(r => ({
+      name: r.name,
+      stars: r.stargazers_count,
+      language: r.language,
+      description: r.description,
+    }));
+
+  let recommendation: HiringInsights["recommendation"];
+  const score = profileScore.total;
+  if (score >= 75 && strengths.length >= 4) recommendation = "Strongly Recommend";
+  else if (score >= 50 && strengths.length >= 3) recommendation = "Recommend";
+  else if (score >= 25 && concerns.length <= 3) recommendation = "Consider";
+  else recommendation = "Needs Review";
+
+  const name = user.name || user.login;
+  let summary = `${name} is `;
+  if (experienceLevel === "Senior") summary += `an experienced developer with ${accountYears} years on GitHub. `;
+  else if (experienceLevel === "Mid-Level") summary += `a mid-level developer with ${accountYears} years on GitHub. `;
+  else if (experienceLevel === "Junior") summary += `a junior developer building their portfolio. `;
+  else summary += `a newcomer to open source development. `;
+
+  if (topLanguages.length > 0) {
+    summary += `Primary skills include ${topLanguages.slice(0, 3).join(", ")}. `;
+  }
+  if (repos.length > 0) {
+    summary += `Their portfolio includes ${repos.length} original ${repos.length === 1 ? "repository" : "repositories"}`;
+    if (totalStars > 0) summary += ` with ${totalStars} total stars`;
+    summary += ". ";
+  }
+  if (recommendation === "Strongly Recommend" || recommendation === "Recommend") {
+    summary += "Overall profile suggests a capable candidate worth considering.";
+  } else if (recommendation === "Consider") {
+    summary += "Profile shows potential but may benefit from further evaluation.";
+  } else {
+    summary += "Limited public portfolio — recommend reviewing additional qualifications.";
+  }
+
+  return {
+    recommendation,
+    strengths: strengths.slice(0, 8),
+    concerns: concerns.slice(0, 5),
+    experienceLevel,
+    primarySkills: topLanguages.slice(0, 6),
+    repoQuality,
+    collaborationIndicator,
+    projectDiversity,
+    topProjects,
+    summary,
+  };
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express,
@@ -582,6 +709,11 @@ export async function registerRoutes(
         },
       };
 
+      const hiringInsights = generateHiringInsights(
+        user, ownRepos, totalStars, totalForks, topLanguages,
+        accountAgeDays, avgStarsPerRepo, profileScore, activityTimeline
+      );
+
       const result: ProfileAnalysisResult = {
         user,
         repos: ownRepos,
@@ -593,6 +725,7 @@ export async function registerRoutes(
         avgStarsPerRepo,
         profileScore,
         activityTimeline,
+        hiringInsights,
       };
 
       return res.json(result);

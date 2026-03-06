@@ -16,9 +16,11 @@ import { HealthMonitor } from "@/components/health-monitor";
 import { ProfileHeader } from "@/components/profile-header";
 import { ProfileScoreCard } from "@/components/profile-score";
 import { ProfileRepos } from "@/components/profile-repos";
-import { ProfileLanguages } from "@/components/profile-languages";
 import { ProfileActivity } from "@/components/profile-activity";
-import { Loader2, GitBranch, Scan, User } from "lucide-react";
+import { HiringAssessment } from "@/components/hiring-assessment";
+import { TopProjects } from "@/components/top-projects";
+import { SkillsOverview } from "@/components/skills-overview";
+import { Loader2, GitBranch, Scan, User, FileText } from "lucide-react";
 
 type ViewMode = "idle" | "repo" | "profile";
 
@@ -83,7 +85,7 @@ export default function Dashboard() {
                 RepoScan
               </h1>
               <p className="text-xs text-muted-foreground">
-                GitHub Repository & Profile Intelligence
+                GitHub Hiring & Repository Intelligence
               </p>
             </div>
           </div>
@@ -97,11 +99,11 @@ export default function Dashboard() {
               <GitBranch className="w-8 h-8 text-primary" />
             </div>
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-center mb-3" data-testid="text-hero-title">
-              Analyze Any GitHub Repository or Profile
+              GitHub Intelligence for Hiring
             </h2>
             <p className="text-muted-foreground text-center max-w-lg mb-8 text-sm sm:text-base">
-              Paste a repository URL for detailed insights, or enter a username to analyze
-              an entire GitHub profile with aggregated stats and scoring.
+              Evaluate developer candidates by analyzing their GitHub profile, or deep-dive into
+              any repository for quality scores, tech stack, and project health.
             </p>
             <div className="w-full max-w-2xl">
               <ScanInput
@@ -118,7 +120,7 @@ export default function Dashboard() {
           <div className="flex flex-col items-center justify-center py-24 gap-4">
             <Loader2 className="w-10 h-10 text-primary animate-spin" data-testid="icon-loading" />
             <p className="text-muted-foreground font-medium">
-              {analyzeMutation.isPending ? "Analyzing repository..." : "Analyzing profile..."}
+              {analyzeMutation.isPending ? "Analyzing repository..." : "Generating candidate report..."}
             </p>
             <p className="text-xs text-muted-foreground">Fetching data from GitHub API</p>
           </div>
@@ -181,10 +183,15 @@ export default function Dashboard() {
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <User className="w-5 h-5 text-muted-foreground" />
-                <h2 className="text-xl font-semibold tracking-tight" data-testid="text-profile-heading">
-                  Profile Analysis
-                </h2>
+                <FileText className="w-5 h-5 text-muted-foreground" />
+                <div>
+                  <h2 className="text-xl font-semibold tracking-tight" data-testid="text-profile-heading">
+                    Candidate Report
+                  </h2>
+                  <p className="text-xs text-muted-foreground">
+                    GitHub profile analysis for {profileResult.user.name || profileResult.user.login}
+                  </p>
+                </div>
               </div>
               <div className="w-full sm:w-auto sm:max-w-md">
                 <ScanInput
@@ -202,10 +209,20 @@ export default function Dashboard() {
               totalStars={profileResult.totalStars}
               totalForks={profileResult.totalForks}
               accountAgeDays={profileResult.accountAgeDays}
+              experienceLevel={profileResult.hiringInsights.experienceLevel}
             />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 space-y-6">
+                <HiringAssessment
+                  insights={profileResult.hiringInsights}
+                  candidateName={profileResult.user.name || profileResult.user.login}
+                />
+                <TopProjects
+                  projects={profileResult.hiringInsights.topProjects}
+                  onAnalyzeRepo={handleAnalyzeRepo}
+                  ownerLogin={profileResult.user.login}
+                />
                 <ProfileRepos
                   repos={profileResult.repos}
                   onAnalyzeRepo={handleAnalyzeRepo}
@@ -214,8 +231,10 @@ export default function Dashboard() {
               </div>
               <div className="space-y-6">
                 <ProfileScoreCard score={profileResult.profileScore} />
-                <ProfileLanguages
+                <SkillsOverview
+                  primarySkills={profileResult.hiringInsights.primarySkills}
                   languages={profileResult.languages}
+                  totalRepos={profileResult.repos.length}
                 />
               </div>
             </div>
