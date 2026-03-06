@@ -87,5 +87,20 @@ client/src/components/
 - `POST /api/analyze` - Accepts `{ url }`, returns `AnalysisResult`
 - `POST /api/profile` - Accepts `{ username }`, returns `ProfileAnalysisResult` with `hiringInsights` (redFlags, improvementTips, pinned projects)
 
+## Vercel Deployment
+The project is configured for Vercel deployment alongside the existing Replit dev setup:
+- `api/analyze.ts` - Vercel serverless function for POST /api/analyze
+- `api/profile.ts` - Vercel serverless function for POST /api/profile
+- `api/rate-limit.ts` - Vercel serverless function for GET /api/rate-limit
+- `api/_lib/github.ts` - Shared GitHub API utilities used by all serverless functions
+- `vercel.json` - Build config (uses `npx vite build`, outputs to `dist/public`) + SPA rewrites
+- Replit-specific Vite plugins are conditionally loaded only when `REPL_ID` env var is present
+
+### Deploying to Vercel
+1. Push this repo to GitHub
+2. Import the repo in Vercel dashboard
+3. Set `GITHUB_TOKEN` environment variable in Vercel project settings
+4. Deploy — Vercel auto-detects the config from `vercel.json`
+
 ## Environment Variables
 - `GITHUB_TOKEN` (optional) - GitHub personal access token for higher rate limits

@@ -1,0 +1,16 @@
+{
+  "buildCommand": "npx vite build",
+  "outputDirectory": "dist/public",
+  "framework": null,
+  "functions": {
+    "api/**/*.ts": {
+      "runtime": "@vercel/node@3"
+    }
+  },
+  "rewrites": [
+    { "source": "/api/analyze", "destination": "/api/analyze" },
+    { "source": "/api/profile", "destination": "/api/profile" },
+    { "source": "/api/rate-limit", "destination": "/api/rate-limit" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
