@@ -48,6 +48,11 @@ On first visit, users choose "I'm Hiring" or "I'm a Developer". This changes the
 - **Export to PDF** - Professional PDF reports for both modes
 - **Dark Mode** - Light/dark toggle persisted in localStorage
 - **Search History** - Recent searches (max 10) with dropdown on focus
+- **Rate Limit Indicator** - Live GitHub API rate limit display in header, auto-refreshes every 30 seconds
+- **Shareable URLs** - URL params (?user=torvalds&mode=candidate) for sharing analysis links
+- **Copy Link Button** - One-click copy shareable URL to clipboard with toast confirmation
+- **Loading Skeletons** - Polished skeleton cards during loading instead of just a spinner
+- **Animated Score Counters** - Score numbers animate counting up from 0 when results load
 
 ## Project Structure
 ```

@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { RepoScore } from "@shared/schema";
 import { Trophy, Star, Users, GitCommit, FileText, CircleDot, BookOpen } from "lucide-react";
@@ -6,10 +7,40 @@ interface RepoScoreCardProps {
   score: RepoScore;
 }
 
+function useAnimatedCounter(target: number, duration = 1000): number {
+  const [value, setValue] = useState(0);
+
+  useEffect(() => {
+    if (target === 0) {
+      setValue(0);
+      return;
+    }
+    setValue(0);
+    const startTime = performance.now();
+    let rafId: number;
+
+    function animate(currentTime: number) {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setValue(Math.round(eased * target));
+      if (progress < 1) {
+        rafId = requestAnimationFrame(animate);
+      }
+    }
+
+    rafId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafId);
+  }, [target, duration]);
+
+  return value;
+}
+
 function ScoreRing({ score, label }: { score: number; label: string }) {
   const radius = 54;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (score / 100) * circumference;
+  const animatedScore = useAnimatedCounter(score);
 
   return (
     <div className="flex flex-col items-center gap-2">
@@ -38,7 +69,7 @@ function ScoreRing({ score, label }: { score: number; label: string }) {
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-3xl font-bold" data-testid="text-score-value">{score}</span>
+          <span className="text-3xl font-bold" data-testid="text-score-value">{animatedScore}</span>
           <span className="text-xs text-muted-foreground">/100</span>
         </div>
       </div>

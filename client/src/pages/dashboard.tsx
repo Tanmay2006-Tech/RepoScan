@@ -21,6 +21,7 @@ import { HiringAssessment } from "@/components/hiring-assessment";
 import { TopProjects } from "@/components/top-projects";
 import { SkillsOverview } from "@/components/skills-overview";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { RateLimit } from "@/components/rate-limit";
 import { TeamFit } from "@/components/team-fit";
 import { ScoringWeights } from "@/components/scoring-weights";
 import { CompareCandidates } from "@/components/compare-candidates";
@@ -28,8 +29,10 @@ import { ProfileTips } from "@/components/profile-tips";
 import { ContributionHeatmap } from "@/components/contribution-heatmap";
 import { SkillsRadar } from "@/components/skills-radar";
 import { exportProfilePDF, exportRepoPDF } from "@/lib/export-pdf";
-import { Loader2, GitBranch, FileText, Download, UserPlus, Briefcase, User } from "lucide-react";
+import { GitBranch, FileText, Download, UserPlus, Briefcase, User, Link2, Check } from "lucide-react";
+import { ProfileSkeleton, RepoSkeleton } from "@/components/loading-skeleton";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 type ViewMode = "idle" | "repo" | "profile";
 
@@ -41,8 +44,13 @@ export default function Dashboard() {
   const [profileResult, setProfileResult] = useState<ProfileAnalysisResultFull | null>(null);
   const [compareList, setCompareList] = useState<ProfileAnalysisResultFull[]>([]);
   const [customScore, setCustomScore] = useState<{ total: number; label: ProfileScore["label"] } | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const { toast } = useToast();
   const [purpose, setPurpose] = useState<UserPurpose | null>(() => {
     try {
+      const params = new URLSearchParams(window.location.search);
+      const modeParam = params.get("mode");
+      if (modeParam === "hr" || modeParam === "candidate") return modeParam;
       const saved = localStorage.getItem(PURPOSE_STORAGE_KEY);
       return saved === "hr" || saved === "candidate" ? saved : null;
     } catch {
@@ -53,8 +61,33 @@ export default function Dashboard() {
   useEffect(() => {
     if (purpose) {
       localStorage.setItem(PURPOSE_STORAGE_KEY, purpose);
+      if (profileResult) {
+        updateURL({ user: profileResult.user.login, mode: purpose });
+      } else if (repoResult) {
+        updateURL({ repo: repoResult.repo.full_name, mode: purpose });
+      }
     }
   }, [purpose]);
+
+  const updateURL = (urlParams: Record<string, string>) => {
+    const url = new URL(window.location.href);
+    url.search = "";
+    for (const [key, value] of Object.entries(urlParams)) {
+      url.searchParams.set(key, value);
+    }
+    window.history.replaceState({}, "", url.toString());
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setLinkCopied(true);
+      toast({ title: "Copied!", description: "Shareable link copied to clipboard." });
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch {
+      toast({ title: "Failed to copy", description: "Could not copy link to clipboard.", variant: "destructive" });
+    }
+  };
 
   const analyzeMutation = useMutation({
     mutationFn: async (url: string) => {
@@ -66,6 +99,9 @@ export default function Dashboard() {
       setProfileResult(null);
       setViewMode("repo");
       setCustomScore(null);
+      const urlParams: Record<string, string> = { repo: data.repo.full_name };
+      if (purpose) urlParams.mode = purpose;
+      updateURL(urlParams);
     },
   });
 
@@ -79,8 +115,23 @@ export default function Dashboard() {
       setRepoResult(null);
       setViewMode("profile");
       setCustomScore(null);
+      const urlParams: Record<string, string> = { user: data.user.login };
+      if (purpose) urlParams.mode = purpose;
+      updateURL(urlParams);
     },
   });
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const userParam = params.get("user");
+    const repoParam = params.get("repo");
+
+    if (userParam) {
+      profileMutation.mutate(userParam);
+    } else if (repoParam) {
+      analyzeMutation.mutate(`https://github.com/${repoParam}`);
+    }
+  }, []);
 
   const isLoading = analyzeMutation.isPending || profileMutation.isPending;
   const error = analyzeMutation.error?.message || profileMutation.error?.message || null;
@@ -164,6 +215,7 @@ export default function Dashboard() {
                   {isHR ? "HR Mode" : "Developer Mode"}
                 </Button>
               )}
+              <RateLimit />
               <ThemeToggle />
             </div>
           </div>
@@ -242,17 +294,7 @@ export default function Dashboard() {
         )}
 
         {isLoading && (
-          <div className="flex flex-col items-center justify-center py-24 gap-4">
-            <Loader2 className="w-10 h-10 text-primary animate-spin" data-testid="icon-loading" />
-            <p className="text-muted-foreground font-medium">
-              {analyzeMutation.isPending
-                ? "Analyzing repository..."
-                : isHR
-                  ? "Generating candidate report..."
-                  : "Analyzing your profile..."}
-            </p>
-            <p className="text-xs text-muted-foreground">Fetching data from GitHub API</p>
-          </div>
+          analyzeMutation.isPending ? <RepoSkeleton /> : <ProfileSkeleton />
         )}
 
         {showRepoResults && repoResult && (
@@ -286,6 +328,16 @@ export default function Dashboard() {
                 >
                   <Download className="w-3.5 h-3.5" />
                   Export PDF
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopyLink}
+                  className="gap-1.5"
+                  data-testid="button-copy-link"
+                >
+                  {linkCopied ? <Check className="w-3.5 h-3.5" /> : <Link2 className="w-3.5 h-3.5" />}
+                  {linkCopied ? "Copied!" : "Copy Link"}
                 </Button>
                 <div className="w-full sm:w-auto sm:max-w-md">
                   <ScanInput
@@ -346,6 +398,16 @@ export default function Dashboard() {
                 >
                   <Download className="w-3.5 h-3.5" />
                   Export PDF
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopyLink}
+                  className="gap-1.5"
+                  data-testid="button-copy-link"
+                >
+                  {linkCopied ? <Check className="w-3.5 h-3.5" /> : <Link2 className="w-3.5 h-3.5" />}
+                  {linkCopied ? "Copied!" : "Copy Link"}
                 </Button>
                 {isHR && (
                   <Button
