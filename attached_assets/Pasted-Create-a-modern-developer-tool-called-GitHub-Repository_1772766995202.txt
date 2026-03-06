@@ -1,0 +1,196 @@
+Create a modern developer tool called **GitHub Repository Intelligence Dashboard**.
+
+The application allows a user to paste a GitHub repository URL and receive detailed insights about the project including repository statistics, tech stack detection, project structure visualization, contributor insights, and repository quality scoring.
+
+IMPORTANT CONSTRAINTS
+
+* Do NOT use any paid APIs
+* Do NOT use OpenAI or any AI services
+* Use only the GitHub REST API
+* The project must look like it was written manually by a developer
+* The project must deploy perfectly on **Vercel free tier**
+* Use **Next.js App Router**
+
+TECH STACK
+
+Frontend
+Next.js (App Router)
+TypeScript
+TailwindCSS
+
+Backend
+Next.js API Routes (serverless)
+
+External APIs
+GitHub REST API
+
+LIBRARIES
+
+axios
+react-icons
+chart.js
+
+MAIN FEATURES
+
+1. GitHub Repository Analyzer
+
+User pastes a repository URL such as:
+
+https://github.com/vercel/next.js
+
+The app extracts:
+owner
+repository name
+
+Then fetches from GitHub API:
+
+repository description
+stars
+forks
+watchers
+primary language
+topics
+contributors
+commit activity
+README
+file tree
+
+2. Repository Intelligence Score
+
+Create a scoring system out of 100 based on:
+
+stars
+number of contributors
+commit frequency
+presence of README
+open issues ratio
+
+Display a visual score indicator.
+
+Example:
+
+Project Quality Score
+82 / 100
+
+Label categories:
+
+Excellent
+Good
+Average
+Needs Improvement
+
+3. Tech Stack Detector
+
+Analyze files and languages to detect stack.
+
+Examples:
+
+If package.json contains "react" → React frontend
+If next.config.js exists → Next.js framework
+If requirements.txt exists → Python backend
+If Dockerfile exists → containerized project
+
+Display stack in cards.
+
+4. Repository Structure Viewer
+
+Fetch repository tree and display collapsible structure.
+
+Example output:
+
+src
+├ components
+├ pages
+├ utils
+
+5. Contributor Insights
+
+Display top contributors including:
+
+avatar
+username
+number of contributions
+
+6. README Simplifier
+
+Fetch README.md and extract:
+
+project description
+installation instructions
+usage summary
+
+Display it in a readable format.
+
+UI DESIGN
+
+Modern developer dashboard style.
+
+Top section:
+
+GitHub URL input
+Analyze Repository button
+
+Below show cards for:
+
+Repository Stats
+Project Score
+Tech Stack
+Contributors
+File Structure
+README Summary
+
+Add loading spinner while fetching.
+
+PROJECT STRUCTURE
+
+repo-intelligence-dashboard
+
+app
+├ page.tsx
+└ api
+└ analyze
+└ route.ts
+
+components
+├ RepoInput.tsx
+├ RepoStats.tsx
+├ RepoScore.tsx
+├ TechStack.tsx
+├ FileTree.tsx
+├ Contributors.tsx
+└ ReadmeSummary.tsx
+
+lib
+├ github.ts
+└ analyzer.ts
+
+FUNCTIONAL REQUIREMENTS
+
+Use axios or fetch for API calls.
+
+Create reusable functions for:
+
+fetchRepoDetails
+fetchContributors
+fetchLanguages
+fetchRepoTree
+
+Add error handling for:
+
+invalid GitHub URL
+rate limit errors
+
+Use Tailwind styling.
+
+Add responsive layout.
+
+RUNNING LOCALLY
+
+npm install
+npm run dev
+
+DEPLOYMENT
+
+The project must deploy successfully on **Vercel** with default Next.js configuration.
+
+The final project should be well structured, commented, and ready to push to GitHub as a portfolio project.
