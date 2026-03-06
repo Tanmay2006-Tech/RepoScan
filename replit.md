@@ -12,12 +12,14 @@ A developer tool that allows users to paste a GitHub repository URL and receive 
 ## Key Features
 1. **Repository Analyzer** - Fetches repo details, stars, forks, watchers, language, topics
 2. **Quality Score** - 0-100 scoring system based on stars, contributors, commit frequency, README presence, issue management, documentation
-3. **Tech Stack Detection** - Analyzes file tree to detect frameworks, languages, tools
-4. **File Tree Viewer** - Collapsible repository structure visualization
-5. **Contributor Insights** - Top contributors with avatars and commit counts
-6. **Language Breakdown** - Visual bar chart of language composition
-7. **Commit Activity** - Weekly commit activity chart for last 6 months
-8. **README Summary** - Parsed README with overview, installation, and usage tabs
+3. **Project Complexity Analyzer** - Classifies projects as Beginner/Intermediate/Advanced/Enterprise based on file count, languages, contributors, commits
+4. **Repository Health Monitor** - Evaluates health status, activity level, issue resolution, and maintenance status
+5. **Tech Stack Detection** - Analyzes file tree to detect frameworks, languages, tools
+6. **File Tree Viewer** - Collapsible repository structure visualization
+7. **Contributor Insights** - Top contributors with avatars and commit counts
+8. **Language Breakdown** - Visual bar chart of language composition
+9. **Commit Activity** - Weekly commit activity chart for last 6 months
+10. **README Summary** - Parsed README with overview, installation, and usage tabs
 
 ## Project Structure
 ```
@@ -30,6 +32,8 @@ client/src/components/
   repo-input.tsx           - URL input form
   repo-stats.tsx           - Stats cards (stars, forks, etc.)
   repo-score.tsx           - Quality score ring + breakdown
+  complexity-analyzer.tsx  - Project complexity classification
+  health-monitor.tsx       - Repository health status
   tech-stack.tsx           - Detected tech stack badges
   contributors.tsx         - Top contributor list
   file-tree.tsx            - Collapsible file tree

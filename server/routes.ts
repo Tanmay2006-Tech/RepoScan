@@ -10,6 +10,8 @@ import type {
   RepoScore,
   ReadmeSummary,
   AnalysisResult,
+  ProjectComplexity,
+  RepoHealth,
 } from "@shared/schema";
 
 const GITHUB_API = "https://api.github.com";
@@ -186,6 +188,110 @@ function calculateScore(
   };
 }
 
+function analyzeComplexity(
+  tree: TreeItem[],
+  languages: LanguageBreakdown,
+  contributors: Contributor[],
+  commitActivity: number[],
+): ProjectComplexity {
+  const fileCount = tree.filter((t) => t.type === "blob").length;
+  const folderCount = tree.filter((t) => t.type === "tree").length;
+  const languageCount = Object.keys(languages).length;
+  const contributorCount = contributors.length;
+  const totalCommits = commitActivity.reduce((a, b) => a + b, 0);
+
+  const indicators: string[] = [];
+  let score = 0;
+
+  if (fileCount >= 500) { score += 3; indicators.push("Large codebase"); }
+  else if (fileCount >= 100) { score += 2; indicators.push("Medium codebase"); }
+  else { score += 1; indicators.push("Small codebase"); }
+
+  if (languageCount >= 5) { score += 3; indicators.push("Multiple languages"); }
+  else if (languageCount >= 3) { score += 2; indicators.push("Several languages"); }
+  else { score += 1; }
+
+  if (contributorCount >= 20) { score += 3; indicators.push("Large team"); }
+  else if (contributorCount >= 5) { score += 2; indicators.push("Active team"); }
+  else { score += 1; }
+
+  if (totalCommits >= 200) { score += 3; indicators.push("High commit activity"); }
+  else if (totalCommits >= 50) { score += 2; indicators.push("Regular commits"); }
+  else { score += 1; }
+
+  if (folderCount >= 50) { indicators.push("Deep directory structure"); }
+
+  let level: ProjectComplexity["level"];
+  if (score >= 10) level = "Enterprise";
+  else if (score >= 7) level = "Advanced";
+  else if (score >= 4) level = "Intermediate";
+  else level = "Beginner";
+
+  return { level, fileCount, folderCount, languageCount, contributorCount, totalCommits, indicators };
+}
+
+function analyzeHealth(
+  repo: RepoDetails,
+  contributors: Contributor[],
+  commitActivity: number[],
+): RepoHealth {
+  const now = new Date();
+  const lastPush = new Date(repo.pushed_at);
+  const lastCommitDaysAgo = Math.floor((now.getTime() - lastPush.getTime()) / (1000 * 60 * 60 * 24));
+
+  const recentWeeks = commitActivity.slice(-12);
+  const totalCommitsRecent = recentWeeks.reduce((a, b) => a + b, 0);
+  const contributorActivity = contributors.length;
+
+  let activityLevel: RepoHealth["activityLevel"];
+  if (totalCommitsRecent >= 50) activityLevel = "High";
+  else if (totalCommitsRecent >= 20) activityLevel = "Moderate";
+  else if (totalCommitsRecent >= 5) activityLevel = "Low";
+  else activityLevel = "Inactive";
+
+  let maintenance: RepoHealth["maintenance"];
+  if (lastCommitDaysAgo <= 7) maintenance = "Active";
+  else if (lastCommitDaysAgo <= 30) maintenance = "Maintained";
+  else if (lastCommitDaysAgo <= 90) maintenance = "Sporadic";
+  else maintenance = "Unmaintained";
+
+  let issueResolution: RepoHealth["issueResolution"];
+  const issueCount = repo.open_issues_count;
+  if (issueCount === 0) issueResolution = "Excellent";
+  else if (issueCount < 20) issueResolution = "Good";
+  else if (issueCount < 100) issueResolution = "Needs Attention";
+  else issueResolution = "Poor";
+
+  let healthScore = 0;
+  if (activityLevel === "High") healthScore += 3;
+  else if (activityLevel === "Moderate") healthScore += 2;
+  else if (activityLevel === "Low") healthScore += 1;
+
+  if (maintenance === "Active") healthScore += 3;
+  else if (maintenance === "Maintained") healthScore += 2;
+  else if (maintenance === "Sporadic") healthScore += 1;
+
+  if (issueResolution === "Excellent" || issueResolution === "Good") healthScore += 2;
+  else if (issueResolution === "Needs Attention") healthScore += 1;
+
+  let status: RepoHealth["status"];
+  if (healthScore >= 7) status = "Healthy";
+  else if (healthScore >= 5) status = "Good";
+  else if (healthScore >= 3) status = "Warning";
+  else status = "Critical";
+
+  return {
+    status,
+    activityLevel,
+    issueResolution,
+    maintenance,
+    lastCommitDaysAgo,
+    openIssues: issueCount,
+    totalCommitsRecent,
+    contributorActivity,
+  };
+}
+
 function parseReadme(raw: string): ReadmeSummary {
   const lines = raw.split("\n");
   let description = "";
@@ -321,6 +427,8 @@ export async function registerRoutes(
       const hasReadme = readmeRaw.length > 0;
       const score = calculateScore(repo, contributors, commitActivity, hasReadme);
       const readme = parseReadme(readmeRaw);
+      const complexity = analyzeComplexity(tree, languages, contributors, commitActivity);
+      const health = analyzeHealth(repo, contributors, commitActivity);
 
       const result: AnalysisResult = {
         repo,
@@ -331,6 +439,8 @@ export async function registerRoutes(
         score,
         readme,
         commitActivity,
+        complexity,
+        health,
       };
 
       return res.json(result);

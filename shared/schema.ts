@@ -79,6 +79,27 @@ export interface ReadmeSummary {
   usage: string;
 }
 
+export interface ProjectComplexity {
+  level: "Beginner" | "Intermediate" | "Advanced" | "Enterprise";
+  fileCount: number;
+  folderCount: number;
+  languageCount: number;
+  contributorCount: number;
+  totalCommits: number;
+  indicators: string[];
+}
+
+export interface RepoHealth {
+  status: "Healthy" | "Good" | "Warning" | "Critical";
+  activityLevel: "High" | "Moderate" | "Low" | "Inactive";
+  issueResolution: "Excellent" | "Good" | "Needs Attention" | "Poor";
+  maintenance: "Active" | "Maintained" | "Sporadic" | "Unmaintained";
+  lastCommitDaysAgo: number;
+  openIssues: number;
+  totalCommitsRecent: number;
+  contributorActivity: number;
+}
+
 export interface AnalysisResult {
   repo: RepoDetails;
   contributors: Contributor[];
@@ -88,4 +109,6 @@ export interface AnalysisResult {
   score: RepoScore;
   readme: ReadmeSummary;
   commitActivity: number[];
+  complexity: ProjectComplexity;
+  health: RepoHealth;
 }

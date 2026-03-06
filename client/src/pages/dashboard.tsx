@@ -11,6 +11,8 @@ import { FileTreeView } from "@/components/file-tree";
 import { ReadmeSummaryView } from "@/components/readme-summary";
 import { LanguageChart } from "@/components/language-chart";
 import { CommitActivity } from "@/components/commit-activity";
+import { ComplexityAnalyzer } from "@/components/complexity-analyzer";
+import { HealthMonitor } from "@/components/health-monitor";
 import { Loader2, GitBranch, Scan } from "lucide-react";
 
 export default function Dashboard() {
@@ -57,7 +59,7 @@ export default function Dashboard() {
             </h2>
             <p className="text-muted-foreground text-center max-w-lg mb-8 text-sm sm:text-base">
               Paste a repository URL to get detailed insights including quality scores,
-              tech stack detection, contributor analysis, and more.
+              tech stack detection, project complexity, health monitoring, and more.
             </p>
             <div className="w-full max-w-2xl">
               <RepoInput
@@ -121,6 +123,8 @@ export default function Dashboard() {
               </div>
               <div className="space-y-6">
                 <RepoScoreCard score={result.score} />
+                {result.complexity && <ComplexityAnalyzer complexity={result.complexity} />}
+                {result.health && <HealthMonitor health={result.health} />}
                 <ContributorsView contributors={result.contributors} />
               </div>
             </div>
