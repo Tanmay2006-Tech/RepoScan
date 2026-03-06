@@ -13,24 +13,6 @@ function formatNumber(num: number): string {
 }
 
 export function ComplexityAnalyzer({ complexity }: ComplexityAnalyzerProps) {
-  const levelColor =
-    complexity.level === "Enterprise"
-      ? "text-chart-5"
-      : complexity.level === "Advanced"
-        ? "text-chart-1"
-        : complexity.level === "Intermediate"
-          ? "text-chart-4"
-          : "text-chart-2";
-
-  const levelBg =
-    complexity.level === "Enterprise"
-      ? "bg-chart-5/10"
-      : complexity.level === "Advanced"
-        ? "bg-chart-1/10"
-        : complexity.level === "Intermediate"
-          ? "bg-chart-4/10"
-          : "bg-chart-2/10";
-
   const metrics = [
     { label: "Files", value: formatNumber(complexity.fileCount), icon: FileCode },
     { label: "Folders", value: formatNumber(complexity.folderCount), icon: Folder },
@@ -48,8 +30,8 @@ export function ComplexityAnalyzer({ complexity }: ComplexityAnalyzerProps) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className={`flex items-center gap-3 rounded-md p-3 ${levelBg}`}>
-          <div className={`text-2xl font-bold ${levelColor}`} data-testid="text-complexity-level">
+        <div className="flex items-center gap-3 rounded-md p-3 bg-muted/40">
+          <div className="text-2xl font-bold" data-testid="text-complexity-level">
             {complexity.level}
           </div>
           <span className="text-xs text-muted-foreground">Level Project</span>
@@ -73,7 +55,7 @@ export function ComplexityAnalyzer({ complexity }: ComplexityAnalyzerProps) {
           <div className="space-y-1.5 pt-2 border-t">
             {complexity.indicators.map((indicator) => (
               <div key={indicator} className="flex items-center gap-2 text-xs" data-testid={`text-indicator-${indicator.toLowerCase().replace(/\s/g, "-")}`}>
-                <Check className="w-3.5 h-3.5 text-chart-2 shrink-0" />
+                <Check className="w-3.5 h-3.5 text-primary shrink-0" />
                 <span>{indicator}</span>
               </div>
             ))}

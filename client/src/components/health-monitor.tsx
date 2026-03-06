@@ -7,16 +7,11 @@ interface HealthMonitorProps {
 }
 
 function StatusDot({ status }: { status: string }) {
-  const color =
-    status === "Healthy" || status === "Active" || status === "High" || status === "Excellent"
-      ? "bg-chart-2"
-      : status === "Good" || status === "Maintained" || status === "Moderate"
-        ? "bg-chart-1"
-        : status === "Warning" || status === "Sporadic" || status === "Low" || status === "Needs Attention"
-          ? "bg-chart-4"
-          : "bg-chart-5";
+  const isPositive =
+    status === "Healthy" || status === "Active" || status === "High" ||
+    status === "Excellent" || status === "Good" || status === "Maintained" || status === "Moderate";
 
-  return <span className={`w-2 h-2 rounded-full ${color} shrink-0`} />;
+  return <span className={`w-2 h-2 rounded-full shrink-0 ${isPositive ? "bg-primary" : "bg-muted-foreground/40"}`} />;
 }
 
 function StatusRow({ label, value, icon: Icon }: { label: string; value: string; icon: typeof Activity }) {
@@ -35,24 +30,6 @@ function StatusRow({ label, value, icon: Icon }: { label: string; value: string;
 }
 
 export function HealthMonitor({ health }: HealthMonitorProps) {
-  const statusColor =
-    health.status === "Healthy"
-      ? "text-chart-2"
-      : health.status === "Good"
-        ? "text-chart-1"
-        : health.status === "Warning"
-          ? "text-chart-4"
-          : "text-chart-5";
-
-  const statusBg =
-    health.status === "Healthy"
-      ? "bg-chart-2/10"
-      : health.status === "Good"
-        ? "bg-chart-1/10"
-        : health.status === "Warning"
-          ? "bg-chart-4/10"
-          : "bg-chart-5/10";
-
   const lastCommitText =
     health.lastCommitDaysAgo === 0
       ? "Today"
@@ -69,10 +46,10 @@ export function HealthMonitor({ health }: HealthMonitorProps) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className={`flex items-center justify-between rounded-md p-3 ${statusBg}`}>
+        <div className="flex items-center justify-between rounded-md p-3 bg-muted/40">
           <div>
             <div className="text-xs text-muted-foreground mb-0.5">Status</div>
-            <div className={`text-lg font-bold ${statusColor}`} data-testid="text-health-status">
+            <div className="text-lg font-bold" data-testid="text-health-status">
               {health.status}
             </div>
           </div>

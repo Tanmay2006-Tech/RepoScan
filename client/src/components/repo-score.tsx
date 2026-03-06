@@ -11,24 +11,6 @@ function ScoreRing({ score, label }: { score: number; label: string }) {
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (score / 100) * circumference;
 
-  const colorClass =
-    score >= 80
-      ? "text-chart-2"
-      : score >= 60
-        ? "text-chart-1"
-        : score >= 40
-          ? "text-chart-4"
-          : "text-chart-5";
-
-  const strokeColor =
-    score >= 80
-      ? "hsl(var(--chart-2))"
-      : score >= 60
-        ? "hsl(var(--chart-1))"
-        : score >= 40
-          ? "hsl(var(--chart-4))"
-          : "hsl(var(--chart-5))";
-
   return (
     <div className="flex flex-col items-center gap-2">
       <div className="relative w-32 h-32">
@@ -47,7 +29,7 @@ function ScoreRing({ score, label }: { score: number; label: string }) {
             cy="60"
             r={radius}
             fill="none"
-            stroke={strokeColor}
+            stroke="hsl(var(--primary))"
             strokeWidth="8"
             strokeLinecap="round"
             strokeDasharray={circumference}
@@ -56,11 +38,11 @@ function ScoreRing({ score, label }: { score: number; label: string }) {
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className={`text-3xl font-bold ${colorClass}`} data-testid="text-score-value">{score}</span>
+          <span className="text-3xl font-bold" data-testid="text-score-value">{score}</span>
           <span className="text-xs text-muted-foreground">/100</span>
         </div>
       </div>
-      <span className={`text-sm font-semibold ${colorClass}`} data-testid="text-score-label">{label}</span>
+      <span className="text-sm font-semibold text-muted-foreground" data-testid="text-score-label">{label}</span>
     </div>
   );
 }

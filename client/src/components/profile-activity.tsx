@@ -23,10 +23,10 @@ export function ProfileActivity({ timeline }: ProfileActivityProps) {
       </CardHeader>
       <CardContent>
         <div className="flex items-end gap-[3px] h-24" data-testid="chart-profile-activity">
-          {timeline.map((entry, i) => (
+          {timeline.map((entry) => (
             <div
               key={entry.month}
-              className="flex-1 bg-primary/20 rounded-t-sm relative group"
+              className="flex-1 bg-muted rounded-t-sm relative group"
               style={{
                 height: `${Math.max((entry.repos / max) * 100, 8)}%`,
                 transition: "height 0.5s ease-in-out",

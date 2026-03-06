@@ -1,12 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import type { HiringInsights } from "@shared/schema";
 import {
   UserCheck,
   ShieldCheck,
   AlertTriangle,
   CheckCircle,
-  XCircle,
+  Minus,
   Briefcase,
   Star,
   Users,
@@ -20,24 +19,27 @@ interface HiringAssessmentProps {
 
 function RecommendationBadge({ recommendation }: { recommendation: HiringInsights["recommendation"] }) {
   const config = {
-    "Strongly Recommend": { color: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800", icon: ShieldCheck },
-    "Recommend": { color: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 border-blue-200 dark:border-blue-800", icon: UserCheck },
-    "Consider": { color: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border-amber-200 dark:border-amber-800", icon: AlertTriangle },
-    "Needs Review": { color: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300 border-red-200 dark:border-red-800", icon: XCircle },
+    "Strongly Recommend": { icon: ShieldCheck },
+    "Recommend": { icon: UserCheck },
+    "Consider": { icon: Minus },
+    "Needs Review": { icon: AlertTriangle },
   };
   const c = config[recommendation];
 
   return (
-    <div className={`flex items-center gap-2 px-4 py-2.5 rounded-md border ${c.color}`} data-testid="badge-recommendation">
-      <c.icon className="w-5 h-5" />
-      <span className="font-semibold text-sm">{recommendation}</span>
+    <div className="flex items-center gap-2.5 px-4 py-3 rounded-md bg-primary/10 border border-primary/20" data-testid="badge-recommendation">
+      <c.icon className="w-5 h-5 text-primary" />
+      <div>
+        <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Hiring Verdict</div>
+        <div className="text-sm font-bold text-foreground">{recommendation}</div>
+      </div>
     </div>
   );
 }
 
 function MetricPill({ label, value, icon: Icon }: { label: string; value: string; icon: typeof Briefcase }) {
   return (
-    <div className="flex items-center gap-2 p-2.5 rounded-md bg-muted/40 border">
+    <div className="flex items-center gap-2.5 p-3 rounded-md bg-muted/40 border">
       <Icon className="w-4 h-4 text-muted-foreground shrink-0" />
       <div>
         <div className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</div>
@@ -78,7 +80,7 @@ export function HiringAssessment({ insights, candidateName }: HiringAssessmentPr
             <div className="space-y-1.5">
               {insights.strengths.map((s, i) => (
                 <div key={i} className="flex items-start gap-2 text-xs" data-testid={`text-strength-${i}`}>
-                  <CheckCircle className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
+                  <CheckCircle className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
                   <span>{s}</span>
                 </div>
               ))}
@@ -94,7 +96,7 @@ export function HiringAssessment({ insights, candidateName }: HiringAssessmentPr
             <div className="space-y-1.5">
               {insights.concerns.map((c, i) => (
                 <div key={i} className="flex items-start gap-2 text-xs" data-testid={`text-concern-${i}`}>
-                  <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
+                  <Minus className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
                   <span>{c}</span>
                 </div>
               ))}

@@ -11,41 +11,23 @@ function ScoreRing({ score, label }: { score: number; label: string }) {
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (score / 100) * circumference;
 
-  const colorClass =
-    score >= 80
-      ? "text-chart-2"
-      : score >= 55
-        ? "text-chart-1"
-        : score >= 30
-          ? "text-chart-4"
-          : "text-chart-5";
-
-  const strokeColor =
-    score >= 80
-      ? "hsl(var(--chart-2))"
-      : score >= 55
-        ? "hsl(var(--chart-1))"
-        : score >= 30
-          ? "hsl(var(--chart-4))"
-          : "hsl(var(--chart-5))";
-
   return (
     <div className="flex flex-col items-center gap-2">
       <div className="relative w-32 h-32">
         <svg className="w-32 h-32 -rotate-90" viewBox="0 0 120 120">
           <circle cx="60" cy="60" r={radius} fill="none" stroke="currentColor" strokeWidth="8" className="text-muted/50" />
           <circle
-            cx="60" cy="60" r={radius} fill="none" stroke={strokeColor} strokeWidth="8"
+            cx="60" cy="60" r={radius} fill="none" stroke="hsl(var(--primary))" strokeWidth="8"
             strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset}
             style={{ transition: "stroke-dashoffset 1s ease-in-out" }}
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className={`text-3xl font-bold ${colorClass}`} data-testid="text-profile-score-value">{score}</span>
+          <span className="text-3xl font-bold" data-testid="text-profile-score-value">{score}</span>
           <span className="text-xs text-muted-foreground">/100</span>
         </div>
       </div>
-      <span className={`text-sm font-semibold ${colorClass}`} data-testid="text-profile-score-label">{label}</span>
+      <span className="text-sm font-semibold text-muted-foreground" data-testid="text-profile-score-label">{label}</span>
     </div>
   );
 }
