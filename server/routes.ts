@@ -599,44 +599,20 @@ function buildSkillDomains(languages: LanguageBreakdown): SkillDomain[] {
 
 async function fetchContributionHeatmap(username: string): Promise<ContributionDay[]> {
   try {
-    const pages = await Promise.all([
-      githubFetch(`/users/${username}/events?per_page=100&page=1`).catch(() => []),
-      githubFetch(`/users/${username}/events?per_page=100&page=2`).catch(() => []),
-      githubFetch(`/users/${username}/events?per_page=100&page=3`).catch(() => []),
-    ]);
-    const allEvents: any[] = [];
-    for (const page of pages) {
-      if (Array.isArray(page)) {
-        allEvents.push(...page);
-      }
-    }
-
-    const dayMap = new Map<string, number>();
-
-    const now = new Date();
-    for (let i = 0; i < 90; i++) {
-      const d = new Date(now);
-      d.setDate(d.getDate() - i);
-      const key = d.toISOString().slice(0, 10);
-      dayMap.set(key, 0);
-    }
-
-    for (const event of allEvents) {
-      if (!event.created_at) continue;
-      const date = event.created_at.slice(0, 10);
-      if (dayMap.has(date)) {
-        const weight = event.type === "PushEvent"
-          ? (event.payload?.commits?.length || 1)
-          : 1;
-        dayMap.set(date, (dayMap.get(date) || 0) + weight);
-      }
-    }
+    const res = await fetch(`https://github.com/users/${username}/contributions`, {
+      headers: { "User-Agent": "RepoScan/1.0" },
+    });
+    if (!res.ok) return [];
+    const html = await res.text();
 
     const result: ContributionDay[] = [];
-    const entries = [...dayMap.entries()].sort((a, b) => a[0].localeCompare(b[0]));
-    for (const [date, count] of entries) {
-      result.push({ date, count });
+    const cellRegex = /data-date="(\d{4}-\d{2}-\d{2})"[^>]*data-level="(\d)"/g;
+    let match;
+    while ((match = cellRegex.exec(html)) !== null) {
+      result.push({ date: match[1], count: parseInt(match[2], 10) });
     }
+
+    result.sort((a, b) => a.date.localeCompare(b.date));
     return result;
   } catch {
     return [];

@@ -43,7 +43,7 @@ On first visit, users choose "I'm Hiring" or "I'm a Developer". This changes the
 9. **README Summary** - Parsed with overview, installation, usage tabs
 
 ### Cross-cutting Features
-- **Contribution Heatmap** - GitHub-style calendar grid showing daily activity from last 90 days (Events API, 3 pages)
+- **Contribution Heatmap** - GitHub-style calendar grid showing activity levels over the last year (scraped from GitHub profile)
 - **Skills Radar Chart** - SVG spider chart mapping languages to 6 skill domains (Frontend, Backend, Systems, Mobile, Data & ML, DevOps)
 - **Export to PDF** - Professional PDF reports for both modes
 - **Dark Mode** - Light/dark toggle persisted in localStorage

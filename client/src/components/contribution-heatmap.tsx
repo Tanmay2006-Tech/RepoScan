@@ -10,26 +10,17 @@ interface ContributionHeatmapProps {
 const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const DAY_LABELS = ["", "Mon", "", "Wed", "", "Fri", ""];
 
-function getLevel(count: number, max: number): number {
-  if (count === 0) return 0;
-  if (max === 0) return 0;
-  const ratio = count / max;
-  if (ratio > 0.75) return 4;
-  if (ratio > 0.5) return 3;
-  if (ratio > 0.25) return 2;
-  return 1;
-}
+const LEVEL_LABELS = ["No contributions", "Low activity", "Moderate activity", "High activity", "Very high activity"];
 
 export function ContributionHeatmap({ data }: ContributionHeatmapProps) {
-  const { weeks, max, totalContributions, monthPositions } = useMemo(() => {
-    if (data.length === 0) return { weeks: [], max: 0, totalContributions: 0, monthPositions: [] };
+  const { weeks, activeDays, monthPositions } = useMemo(() => {
+    if (data.length === 0) return { weeks: [], activeDays: 0, monthPositions: [] };
 
     const sorted = [...data].sort((a, b) => a.date.localeCompare(b.date));
-    const maxCount = Math.max(...sorted.map(d => d.count), 1);
-    const total = sorted.reduce((s, d) => s + d.count, 0);
+    const active = sorted.filter(d => d.count > 0).length;
 
-    const weekBuckets: { date: string; count: number; dayOfWeek: number }[][] = [];
-    let currentWeek: { date: string; count: number; dayOfWeek: number }[] = [];
+    const weekBuckets: { date: string; level: number; dayOfWeek: number }[][] = [];
+    let currentWeek: { date: string; level: number; dayOfWeek: number }[] = [];
 
     for (const day of sorted) {
       const d = new Date(day.date + "T00:00:00");
@@ -40,7 +31,7 @@ export function ContributionHeatmap({ data }: ContributionHeatmapProps) {
         currentWeek = [];
       }
 
-      currentWeek.push({ date: day.date, count: day.count, dayOfWeek: dow });
+      currentWeek.push({ date: day.date, level: day.count, dayOfWeek: dow });
     }
     if (currentWeek.length > 0) {
       weekBuckets.push(currentWeek);
@@ -58,7 +49,7 @@ export function ContributionHeatmap({ data }: ContributionHeatmapProps) {
       }
     }
 
-    return { weeks: weekBuckets, max: maxCount, totalContributions: total, monthPositions: months };
+    return { weeks: weekBuckets, activeDays: active, monthPositions: months };
   }, [data]);
 
   if (data.length === 0) return null;
@@ -80,7 +71,7 @@ export function ContributionHeatmap({ data }: ContributionHeatmapProps) {
             Contribution Activity
           </div>
           <span className="text-xs text-muted-foreground font-normal" data-testid="text-contribution-count">
-            {totalContributions} contributions in the last 90 days
+            {activeDays} active days in the last year
           </span>
         </CardTitle>
       </CardHeader>
@@ -122,34 +113,31 @@ export function ContributionHeatmap({ data }: ContributionHeatmapProps) {
             )}
 
             {weeks.map((week, wi) =>
-              week.map((day) => {
-                const level = getLevel(day.count, max);
-                return (
-                  <rect
-                    key={day.date}
-                    x={leftPad + wi * step}
-                    y={topPad + day.dayOfWeek * step}
-                    width={cellSize}
-                    height={cellSize}
-                    rx={2}
-                    ry={2}
-                    className={
-                      level === 0
-                        ? "fill-muted/50"
-                        : level === 1
-                          ? "fill-primary/20"
-                          : level === 2
-                            ? "fill-primary/40"
-                            : level === 3
-                              ? "fill-primary/70"
-                              : "fill-primary"
-                    }
-                    data-testid={`cell-heatmap-${day.date}`}
-                  >
-                    <title>{`${day.date}: ${day.count} contribution${day.count !== 1 ? "s" : ""}`}</title>
-                  </rect>
-                );
-              })
+              week.map((day) => (
+                <rect
+                  key={day.date}
+                  x={leftPad + wi * step}
+                  y={topPad + day.dayOfWeek * step}
+                  width={cellSize}
+                  height={cellSize}
+                  rx={2}
+                  ry={2}
+                  className={
+                    day.level === 0
+                      ? "fill-muted/50"
+                      : day.level === 1
+                        ? "fill-primary/20"
+                        : day.level === 2
+                          ? "fill-primary/40"
+                          : day.level === 3
+                            ? "fill-primary/70"
+                            : "fill-primary"
+                  }
+                  data-testid={`cell-heatmap-${day.date}`}
+                >
+                  <title>{`${day.date}: ${LEVEL_LABELS[day.level] || "Unknown"}`}</title>
+                </rect>
+              ))
             )}
           </svg>
         </div>
