@@ -20,7 +20,7 @@ import { ProfileActivity } from "@/components/profile-activity";
 import { HiringAssessment } from "@/components/hiring-assessment";
 import { TopProjects } from "@/components/top-projects";
 import { SkillsOverview } from "@/components/skills-overview";
-import { Loader2, GitBranch, Scan, User, FileText } from "lucide-react";
+import { Loader2, GitBranch, User, FileText } from "lucide-react";
 
 type ViewMode = "idle" | "repo" | "profile";
 
@@ -78,7 +78,14 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center w-9 h-9 rounded-md bg-primary text-primary-foreground">
-              <Scan className="w-5 h-5" />
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M8 3H5a2 2 0 0 0-2 2v3" />
+                <path d="M16 3h3a2 2 0 0 1 2 2v3" />
+                <path d="M8 21H5a2 2 0 0 1-2-2v-3" />
+                <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+                <circle cx="12" cy="12" r="4" />
+                <path d="M15 15l2.5 2.5" />
+              </svg>
             </div>
             <div>
               <h1 className="text-lg font-semibold tracking-tight" data-testid="text-app-title">
