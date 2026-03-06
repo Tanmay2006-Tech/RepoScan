@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { HiringInsights } from "@shared/schema";
+import type { HiringInsights, UserPurpose } from "@shared/schema";
 import {
   UserCheck,
   ShieldCheck,
@@ -11,28 +11,46 @@ import {
   Users,
   FolderGit2,
   AlertOctagon,
+  TrendingUp,
 } from "lucide-react";
 
 interface HiringAssessmentProps {
   insights: HiringInsights;
   candidateName: string;
+  purpose: UserPurpose;
 }
 
-function RecommendationBadge({ recommendation }: { recommendation: HiringInsights["recommendation"] }) {
+const HR_RECOMMENDATION_LABELS: Record<HiringInsights["recommendation"], string> = {
+  "Strongly Recommend": "Strongly Recommend",
+  "Recommend": "Recommend",
+  "Consider": "Consider",
+  "Needs Review": "Needs Review",
+};
+
+const CANDIDATE_RECOMMENDATION_LABELS: Record<HiringInsights["recommendation"], string> = {
+  "Strongly Recommend": "Excellent Profile",
+  "Recommend": "Strong Profile",
+  "Consider": "Growing Profile",
+  "Needs Review": "Needs Improvement",
+};
+
+function RecommendationBadge({ recommendation, purpose }: { recommendation: HiringInsights["recommendation"]; purpose: UserPurpose }) {
   const config = {
     "Strongly Recommend": { icon: ShieldCheck },
     "Recommend": { icon: UserCheck },
-    "Consider": { icon: Minus },
+    "Consider": { icon: TrendingUp },
     "Needs Review": { icon: AlertTriangle },
   };
   const c = config[recommendation];
+  const labels = purpose === "hr" ? HR_RECOMMENDATION_LABELS : CANDIDATE_RECOMMENDATION_LABELS;
+  const verdictLabel = purpose === "hr" ? "Hiring Verdict" : "Profile Rating";
 
   return (
     <div className="flex items-center gap-2.5 px-4 py-3 rounded-md bg-primary/10 border border-primary/20" data-testid="badge-recommendation">
       <c.icon className="w-5 h-5 text-primary" />
       <div>
-        <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Hiring Verdict</div>
-        <div className="text-sm font-bold text-foreground">{recommendation}</div>
+        <div className="text-[10px] text-muted-foreground uppercase tracking-wider">{verdictLabel}</div>
+        <div className="text-sm font-bold text-foreground">{labels[recommendation]}</div>
       </div>
     </div>
   );
@@ -50,17 +68,23 @@ function MetricPill({ label, value, icon: Icon }: { label: string; value: string
   );
 }
 
-export function HiringAssessment({ insights, candidateName }: HiringAssessmentProps) {
+export function HiringAssessment({ insights, candidateName, purpose }: HiringAssessmentProps) {
+  const isHR = purpose === "hr";
+  const title = isHR ? "Candidate Assessment" : "Profile Assessment";
+  const strengthsLabel = isHR ? "Strengths" : "What You're Doing Well";
+  const concernsLabel = isHR ? "Areas of Concern" : "Areas to Grow";
+  const redFlagsLabel = isHR ? "Red Flags" : "Things to Fix";
+
   return (
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-sm font-semibold">
           <Briefcase className="w-4 h-4 text-muted-foreground" />
-          Candidate Assessment
+          {title}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <RecommendationBadge recommendation={insights.recommendation} />
+        <RecommendationBadge recommendation={insights.recommendation} purpose={purpose} />
 
         <p className="text-sm text-muted-foreground leading-relaxed" data-testid="text-hiring-summary">
           {insights.summary}
@@ -77,7 +101,7 @@ export function HiringAssessment({ insights, candidateName }: HiringAssessmentPr
           <div className="rounded-md border border-destructive/20 bg-destructive/5 p-3">
             <h4 className="text-xs font-semibold uppercase tracking-wider text-destructive mb-2 flex items-center gap-1.5">
               <AlertOctagon className="w-3.5 h-3.5" />
-              Red Flags
+              {redFlagsLabel}
             </h4>
             <div className="space-y-1.5">
               {insights.redFlags.map((f, i) => (
@@ -93,7 +117,7 @@ export function HiringAssessment({ insights, candidateName }: HiringAssessmentPr
         {insights.strengths.length > 0 && (
           <div>
             <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-              Strengths
+              {strengthsLabel}
             </h4>
             <div className="space-y-1.5">
               {insights.strengths.map((s, i) => (
@@ -106,10 +130,10 @@ export function HiringAssessment({ insights, candidateName }: HiringAssessmentPr
           </div>
         )}
 
-        {insights.concerns.length > 0 && (
+        {isHR && insights.concerns.length > 0 && (
           <div>
             <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-              Areas of Concern
+              {concernsLabel}
             </h4>
             <div className="space-y-1.5">
               {insights.concerns.map((c, i) => (

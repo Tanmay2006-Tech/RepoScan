@@ -183,6 +183,7 @@ export interface HiringInsights {
   strengths: string[];
   concerns: string[];
   redFlags: string[];
+  improvementTips: string[];
   experienceLevel: "Senior" | "Mid-Level" | "Junior" | "Entry-Level";
   primarySkills: string[];
   repoQuality: "High" | "Above Average" | "Average" | "Below Average";
@@ -191,3 +192,5 @@ export interface HiringInsights {
   topProjects: { name: string; stars: number; language: string | null; description: string | null; pinned: boolean }[];
   summary: string;
 }
+
+export type UserPurpose = "hr" | "candidate";

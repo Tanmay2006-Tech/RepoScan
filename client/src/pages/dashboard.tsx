@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import type { AnalysisResult, ProfileAnalysisResult, ProfileScore } from "@shared/schema";
+import type { AnalysisResult, ProfileAnalysisResult, ProfileScore, UserPurpose } from "@shared/schema";
 import { ScanInput } from "@/components/scan-input";
 import { RepoStats } from "@/components/repo-stats";
 import { RepoScoreCard } from "@/components/repo-score";
@@ -24,11 +24,14 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { TeamFit } from "@/components/team-fit";
 import { ScoringWeights } from "@/components/scoring-weights";
 import { CompareCandidates } from "@/components/compare-candidates";
+import { ProfileTips } from "@/components/profile-tips";
 import { exportProfilePDF, exportRepoPDF } from "@/lib/export-pdf";
-import { Loader2, GitBranch, User, FileText, Download, UserPlus } from "lucide-react";
+import { Loader2, GitBranch, FileText, Download, UserPlus, Briefcase, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type ViewMode = "idle" | "repo" | "profile";
+
+const PURPOSE_STORAGE_KEY = "reposcan-purpose";
 
 export default function Dashboard() {
   const [viewMode, setViewMode] = useState<ViewMode>("idle");
@@ -36,6 +39,20 @@ export default function Dashboard() {
   const [profileResult, setProfileResult] = useState<ProfileAnalysisResult | null>(null);
   const [compareList, setCompareList] = useState<ProfileAnalysisResult[]>([]);
   const [customScore, setCustomScore] = useState<{ total: number; label: ProfileScore["label"] } | null>(null);
+  const [purpose, setPurpose] = useState<UserPurpose | null>(() => {
+    try {
+      const saved = localStorage.getItem(PURPOSE_STORAGE_KEY);
+      return saved === "hr" || saved === "candidate" ? saved : null;
+    } catch {
+      return null;
+    }
+  });
+
+  useEffect(() => {
+    if (purpose) {
+      localStorage.setItem(PURPOSE_STORAGE_KEY, purpose);
+    }
+  }, [purpose]);
 
   const analyzeMutation = useMutation({
     mutationFn: async (url: string) => {
@@ -89,10 +106,16 @@ export default function Dashboard() {
     setCompareList(compareList.filter((_, i) => i !== index));
   };
 
-  const showHero = viewMode === "idle" && !isLoading;
+  const handlePurposeSelect = (p: UserPurpose) => {
+    setPurpose(p);
+  };
+
+  const showPurposeSelector = !purpose && viewMode === "idle" && !isLoading;
+  const showHero = purpose && viewMode === "idle" && !isLoading;
   const showRepoResults = viewMode === "repo" && repoResult && !isLoading;
   const showProfileResults = viewMode === "profile" && profileResult && !isLoading;
   const isInCompareList = profileResult ? compareList.some(c => c.user.login === profileResult.user.login) : false;
+  const isHR = purpose === "hr";
 
   return (
     <div className="min-h-screen bg-background">
@@ -115,27 +138,95 @@ export default function Dashboard() {
                   RepoScan
                 </h1>
                 <p className="text-xs text-muted-foreground">
-                  GitHub Hiring & Repository Intelligence
+                  GitHub Intelligence {isHR ? "for Hiring" : purpose === "candidate" ? "for Developers" : ""}
                 </p>
               </div>
             </div>
-            <ThemeToggle />
+            <div className="flex items-center gap-2">
+              {purpose && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setPurpose(null);
+                    setViewMode("idle");
+                    setRepoResult(null);
+                    setProfileResult(null);
+                    setCompareList([]);
+                    localStorage.removeItem(PURPOSE_STORAGE_KEY);
+                  }}
+                  className="text-xs text-muted-foreground gap-1.5"
+                  data-testid="button-switch-purpose"
+                >
+                  {isHR ? <Briefcase className="w-3.5 h-3.5" /> : <User className="w-3.5 h-3.5" />}
+                  {isHR ? "HR Mode" : "Developer Mode"}
+                </Button>
+              )}
+              <ThemeToggle />
+            </div>
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {showPurposeSelector && (
+          <div className="flex flex-col items-center justify-center py-16 sm:py-24">
+            <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-6">
+              <GitBranch className="w-8 h-8 text-primary" />
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-center mb-3" data-testid="text-hero-title">
+              Welcome to RepoScan
+            </h2>
+            <p className="text-muted-foreground text-center max-w-lg mb-10 text-sm sm:text-base">
+              GitHub profile and repository intelligence — for both sides of the hiring table.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-xl">
+              <button
+                onClick={() => handlePurposeSelect("hr")}
+                className="group flex flex-col items-center gap-4 p-6 rounded-xl border-2 border-border bg-card hover:border-primary/50 hover:bg-primary/5 transition-all text-center"
+                data-testid="button-purpose-hr"
+              >
+                <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                  <Briefcase className="w-7 h-7 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-base font-semibold mb-1">I'm Hiring</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Evaluate candidates, compare profiles, get hiring recommendations, and export reports.
+                  </p>
+                </div>
+              </button>
+              <button
+                onClick={() => handlePurposeSelect("candidate")}
+                className="group flex flex-col items-center gap-4 p-6 rounded-xl border-2 border-border bg-card hover:border-primary/50 hover:bg-primary/5 transition-all text-center"
+                data-testid="button-purpose-candidate"
+              >
+                <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                  <User className="w-7 h-7 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-base font-semibold mb-1">I'm a Developer</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    See how your GitHub looks to recruiters, get your profile score, and find ways to improve.
+                  </p>
+                </div>
+              </button>
+            </div>
+          </div>
+        )}
+
         {showHero && (
           <div className="flex flex-col items-center justify-center py-16 sm:py-24">
             <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-6">
               <GitBranch className="w-8 h-8 text-primary" />
             </div>
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-center mb-3" data-testid="text-hero-title">
-              GitHub Intelligence for Hiring
+              {isHR ? "GitHub Intelligence for Hiring" : "Make Your GitHub Stand Out"}
             </h2>
             <p className="text-muted-foreground text-center max-w-lg mb-8 text-sm sm:text-base">
-              Evaluate developer candidates by analyzing their GitHub profile, or deep-dive into
-              any repository for quality scores, tech stack, and project health.
+              {isHR
+                ? "Evaluate developer candidates by analyzing their GitHub profile, or deep-dive into any repository for quality scores, tech stack, and project health."
+                : "See exactly how recruiters evaluate your GitHub profile. Get your score, discover your strengths, and get actionable tips to improve."}
             </p>
             <div className="w-full max-w-2xl">
               <ScanInput
@@ -152,7 +243,11 @@ export default function Dashboard() {
           <div className="flex flex-col items-center justify-center py-24 gap-4">
             <Loader2 className="w-10 h-10 text-primary animate-spin" data-testid="icon-loading" />
             <p className="text-muted-foreground font-medium">
-              {analyzeMutation.isPending ? "Analyzing repository..." : "Generating candidate report..."}
+              {analyzeMutation.isPending
+                ? "Analyzing repository..."
+                : isHR
+                  ? "Generating candidate report..."
+                  : "Analyzing your profile..."}
             </p>
             <p className="text-xs text-muted-foreground">Fetching data from GitHub API</p>
           </div>
@@ -230,10 +325,12 @@ export default function Dashboard() {
                 <FileText className="w-5 h-5 text-muted-foreground" />
                 <div>
                   <h2 className="text-xl font-semibold tracking-tight" data-testid="text-profile-heading">
-                    Candidate Report
+                    {isHR ? "Candidate Report" : "Your Profile Analysis"}
                   </h2>
                   <p className="text-xs text-muted-foreground">
-                    GitHub profile analysis for {profileResult.user.name || profileResult.user.login}
+                    {isHR
+                      ? `GitHub profile analysis for ${profileResult.user.name || profileResult.user.login}`
+                      : `Here's how recruiters see your GitHub, ${profileResult.user.name || profileResult.user.login}`}
                   </p>
                 </div>
               </div>
@@ -248,17 +345,19 @@ export default function Dashboard() {
                   <Download className="w-3.5 h-3.5" />
                   Export PDF
                 </Button>
-                <Button
-                  variant={isInCompareList ? "secondary" : "outline"}
-                  size="sm"
-                  onClick={handleAddToCompare}
-                  disabled={isInCompareList || compareList.length >= 4}
-                  className="gap-1.5"
-                  data-testid="button-add-compare"
-                >
-                  <UserPlus className="w-3.5 h-3.5" />
-                  {isInCompareList ? "Added" : "Compare"}
-                </Button>
+                {isHR && (
+                  <Button
+                    variant={isInCompareList ? "secondary" : "outline"}
+                    size="sm"
+                    onClick={handleAddToCompare}
+                    disabled={isInCompareList || compareList.length >= 4}
+                    className="gap-1.5"
+                    data-testid="button-add-compare"
+                  >
+                    <UserPlus className="w-3.5 h-3.5" />
+                    {isInCompareList ? "Added" : "Compare"}
+                  </Button>
+                )}
                 <div className="w-full sm:w-auto sm:max-w-md">
                   <ScanInput
                     onSubmitRepo={handleAnalyzeRepo}
@@ -284,16 +383,22 @@ export default function Dashboard() {
                 <HiringAssessment
                   insights={profileResult.hiringInsights}
                   candidateName={profileResult.user.name || profileResult.user.login}
+                  purpose={purpose || "hr"}
                 />
+                {!isHR && profileResult.hiringInsights.improvementTips && profileResult.hiringInsights.improvementTips.length > 0 && (
+                  <ProfileTips tips={profileResult.hiringInsights.improvementTips} />
+                )}
                 <TopProjects
                   projects={profileResult.hiringInsights.topProjects}
                   onAnalyzeRepo={handleAnalyzeRepo}
                   ownerLogin={profileResult.user.login}
                 />
-                <TeamFit
-                  candidateSkills={profileResult.hiringInsights.primarySkills}
-                  candidateLanguages={profileResult.languages}
-                />
+                {isHR && (
+                  <TeamFit
+                    candidateSkills={profileResult.hiringInsights.primarySkills}
+                    candidateLanguages={profileResult.languages}
+                  />
+                )}
                 <ProfileRepos
                   repos={profileResult.repos}
                   onAnalyzeRepo={handleAnalyzeRepo}
@@ -304,10 +409,12 @@ export default function Dashboard() {
                 <ProfileScoreCard
                   score={customScore ? { ...profileResult.profileScore, total: customScore.total, label: customScore.label } : profileResult.profileScore}
                 />
-                <ScoringWeights
-                  breakdown={profileResult.profileScore.breakdown}
-                  onScoreChange={(total, label) => setCustomScore({ total, label })}
-                />
+                {isHR && (
+                  <ScoringWeights
+                    breakdown={profileResult.profileScore.breakdown}
+                    onScoreChange={(total, label) => setCustomScore({ total, label })}
+                  />
+                )}
                 <SkillsOverview
                   primarySkills={profileResult.hiringInsights.primarySkills}
                   languages={profileResult.languages}
@@ -318,7 +425,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        {compareList.length >= 2 && (
+        {isHR && compareList.length >= 2 && (
           <div className="mt-8">
             <CompareCandidates
               candidates={compareList}

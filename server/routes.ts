@@ -507,11 +507,51 @@ function generateHiringInsights(
     summary += "Limited public portfolio — recommend reviewing additional qualifications.";
   }
 
+  const improvementTips: string[] = [];
+  if (repos.length < 3) {
+    improvementTips.push("Create more public repositories to showcase your skills — aim for at least 5 quality projects");
+  }
+  if (totalStars === 0 && repos.length > 0) {
+    improvementTips.push("Share your projects on social media, dev communities, or Reddit to gain visibility and stars");
+  }
+  if (topLanguages.length <= 1) {
+    improvementTips.push("Try building projects in a second language to show versatility — pick one that complements your primary stack");
+  }
+  if (activeMonths <= 1) {
+    improvementTips.push("Commit regularly — even small updates show consistency. Aim for at least weekly activity");
+  }
+  if (descRatio < 0.3 && repos.length >= 3) {
+    improvementTips.push("Add clear descriptions and README files to all your repositories — recruiters check these first");
+  }
+  if (user.followers === 0) {
+    improvementTips.push("Engage with the community — follow other developers, contribute to discussions, and open issues on projects you use");
+  }
+  if (!user.bio) {
+    improvementTips.push("Add a professional bio to your GitHub profile — mention your skills, interests, and what you're working on");
+  }
+  if (!user.location) {
+    improvementTips.push("Add your location to your profile — it helps recruiters looking for developers in specific regions");
+  }
+  if (forkCount > 0 && repos.length < 5) {
+    improvementTips.push("Focus on creating original projects rather than forking — original work stands out more to recruiters");
+  }
+  const noReadmeRepos = repos.filter(r => !r.description && r.stargazers_count === 0);
+  if (noReadmeRepos.length > 0) {
+    improvementTips.push("Clean up or archive old/incomplete repos — a curated portfolio makes a stronger impression than quantity");
+  }
+  if (pinnedRepoNames.length === 0 && repos.length >= 3) {
+    improvementTips.push("Pin your best repositories on your GitHub profile — these are the first things visitors see");
+  }
+  if (topLanguages.length >= 2 && !user.blog) {
+    improvementTips.push("Add a portfolio website or blog link to your profile to show off your work beyond code");
+  }
+
   return {
     recommendation,
     strengths: strengths.slice(0, 8),
     concerns: concerns.slice(0, 5),
     redFlags: redFlags.slice(0, 5),
+    improvementTips: improvementTips.slice(0, 8),
     experienceLevel,
     primarySkills: topLanguages.slice(0, 6),
     repoQuality,
