@@ -1,7 +1,7 @@
 import { type Express } from "express";
 import { createServer as createViteServer, createLogger } from "vite";
 import { type Server } from "http";
-import viteConfigFn from "../vite.config";
+import viteConfig from "../vite.config";
 import fs from "fs";
 import path from "path";
 import { nanoid } from "nanoid";
@@ -14,8 +14,6 @@ export async function setupVite(server: Server, app: Express) {
     hmr: { server, path: "/vite-hmr" },
     allowedHosts: true as const,
   };
-
-  const viteConfig = typeof viteConfigFn === "function" ? await viteConfigFn({ command: "serve", mode: "development" }) : viteConfigFn;
 
   const vite = await createViteServer({
     ...viteConfig,
@@ -44,7 +42,6 @@ export async function setupVite(server: Server, app: Express) {
         "index.html",
       );
 
-      // always reload the index.html file from disk incase it changes
       let template = await fs.promises.readFile(clientTemplate, "utf-8");
       template = template.replace(
         `src="/src/main.tsx"`,
