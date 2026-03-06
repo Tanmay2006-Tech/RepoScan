@@ -11,9 +11,7 @@ export default defineConfig(async () => {
 
     if (process.env.NODE_ENV !== "production") {
       const { cartographer } = await import("@replit/vite-plugin-cartographer");
-      const { devBanner } = await import("@replit/vite-plugin-dev-banner");
       plugins.push(cartographer());
-      plugins.push(devBanner());
     }
   }
 
