@@ -28,6 +28,7 @@ import { CompareCandidates } from "@/components/compare-candidates";
 import { ProfileTips } from "@/components/profile-tips";
 import { ContributionHeatmap } from "@/components/contribution-heatmap";
 import { SkillsRadar } from "@/components/skills-radar";
+import { InterviewQuestions } from "@/components/interview-questions";
 import { exportProfilePDF, exportRepoPDF } from "@/lib/export-pdf";
 import { GitBranch, FileText, Download, UserPlus, Briefcase, User, Link2, Check } from "lucide-react";
 import { ProfileSkeleton, RepoSkeleton } from "@/components/loading-skeleton";
@@ -461,6 +462,13 @@ export default function Dashboard() {
                   <TeamFit
                     candidateSkills={profileResult.hiringInsights.primarySkills}
                     candidateLanguages={profileResult.languages}
+                  />
+                )}
+                {isHR && (
+                  <InterviewQuestions
+                    insights={profileResult.hiringInsights}
+                    languages={profileResult.languages}
+                    candidateName={profileResult.user.name || profileResult.user.login}
                   />
                 )}
                 {profileResult.contributionHeatmap && profileResult.contributionHeatmap.length > 0 && (

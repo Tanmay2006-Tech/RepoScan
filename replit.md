@@ -27,6 +27,7 @@ On first visit, users choose "I'm Hiring" or "I'm a Developer". This changes the
 6. **Team Fit Analysis** (HR only) - Enter team tech stack, see match % and skill breakdown
 7. **Developer Score** - 0-100 with optional custom weights (HR only)
 8. **Compare Candidates** (HR only) - Side-by-side comparison of up to 4 profiles
+9. **Interview Questions** (HR only) - Auto-generated technical/behavioral questions based on candidate's skills, experience level, and projects. Supports regeneration, expand/collapse, copy individual questions
 9. **Technical Skills** - Primary skill badges, language diversity bar chart
 10. **Repository List** - All owned repos; click any to deep-analyze
 11. **Activity Timeline** - Monthly activity chart
@@ -72,6 +73,7 @@ client/src/components/
   team-fit.tsx             - Team stack match (HR only)
   scoring-weights.tsx      - Custom scoring sliders (HR only)
   compare-candidates.tsx   - Side-by-side comparison (HR only)
+  interview-questions.tsx  - Auto-generated interview questions (HR only)
   theme-toggle.tsx         - Dark/light mode toggle
   profile-header.tsx       - User profile card
   profile-score.tsx        - Score ring + breakdown
