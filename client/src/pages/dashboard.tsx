@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import type { AnalysisResult } from "@shared/schema";
-import { RepoInput } from "@/components/repo-input";
+import type { AnalysisResult, ProfileAnalysisResult } from "@shared/schema";
+import { ScanInput } from "@/components/scan-input";
 import { RepoStats } from "@/components/repo-stats";
 import { RepoScoreCard } from "@/components/repo-score";
 import { TechStackView } from "@/components/tech-stack";
@@ -13,10 +13,19 @@ import { LanguageChart } from "@/components/language-chart";
 import { CommitActivity } from "@/components/commit-activity";
 import { ComplexityAnalyzer } from "@/components/complexity-analyzer";
 import { HealthMonitor } from "@/components/health-monitor";
-import { Loader2, GitBranch, Scan } from "lucide-react";
+import { ProfileHeader } from "@/components/profile-header";
+import { ProfileScoreCard } from "@/components/profile-score";
+import { ProfileRepos } from "@/components/profile-repos";
+import { ProfileLanguages } from "@/components/profile-languages";
+import { ProfileActivity } from "@/components/profile-activity";
+import { Loader2, GitBranch, Scan, User } from "lucide-react";
+
+type ViewMode = "idle" | "repo" | "profile";
 
 export default function Dashboard() {
-  const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>("idle");
+  const [repoResult, setRepoResult] = useState<AnalysisResult | null>(null);
+  const [profileResult, setProfileResult] = useState<ProfileAnalysisResult | null>(null);
 
   const analyzeMutation = useMutation({
     mutationFn: async (url: string) => {
@@ -24,9 +33,42 @@ export default function Dashboard() {
       return (await res.json()) as AnalysisResult;
     },
     onSuccess: (data) => {
-      setResult(data);
+      setRepoResult(data);
+      setProfileResult(null);
+      setViewMode("repo");
     },
   });
+
+  const profileMutation = useMutation({
+    mutationFn: async (username: string) => {
+      const res = await apiRequest("POST", "/api/profile", { username });
+      return (await res.json()) as ProfileAnalysisResult;
+    },
+    onSuccess: (data) => {
+      setProfileResult(data);
+      setRepoResult(null);
+      setViewMode("profile");
+    },
+  });
+
+  const isLoading = analyzeMutation.isPending || profileMutation.isPending;
+  const error = analyzeMutation.error?.message || profileMutation.error?.message || null;
+
+  const handleAnalyzeRepo = (url: string) => {
+    analyzeMutation.reset();
+    profileMutation.reset();
+    analyzeMutation.mutate(url);
+  };
+
+  const handleAnalyzeProfile = (username: string) => {
+    analyzeMutation.reset();
+    profileMutation.reset();
+    profileMutation.mutate(username);
+  };
+
+  const showHero = viewMode === "idle" && !isLoading;
+  const showRepoResults = viewMode === "repo" && repoResult && !isLoading;
+  const showProfileResults = viewMode === "profile" && profileResult && !isLoading;
 
   return (
     <div className="min-h-screen bg-background">
@@ -41,7 +83,7 @@ export default function Dashboard() {
                 RepoScan
               </h1>
               <p className="text-xs text-muted-foreground">
-                GitHub Repository Intelligence
+                GitHub Repository & Profile Intelligence
               </p>
             </div>
           </div>
@@ -49,62 +91,66 @@ export default function Dashboard() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {!result && !analyzeMutation.isPending && (
+        {showHero && (
           <div className="flex flex-col items-center justify-center py-16 sm:py-24">
             <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-6">
               <GitBranch className="w-8 h-8 text-primary" />
             </div>
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-center mb-3" data-testid="text-hero-title">
-              Analyze Any GitHub Repository
+              Analyze Any GitHub Repository or Profile
             </h2>
             <p className="text-muted-foreground text-center max-w-lg mb-8 text-sm sm:text-base">
-              Paste a repository URL to get detailed insights including quality scores,
-              tech stack detection, project complexity, health monitoring, and more.
+              Paste a repository URL for detailed insights, or enter a username to analyze
+              an entire GitHub profile with aggregated stats and scoring.
             </p>
             <div className="w-full max-w-2xl">
-              <RepoInput
-                onSubmit={(url) => analyzeMutation.mutate(url)}
-                isLoading={analyzeMutation.isPending}
-                error={analyzeMutation.error?.message || null}
+              <ScanInput
+                onSubmitRepo={handleAnalyzeRepo}
+                onSubmitProfile={handleAnalyzeProfile}
+                isLoading={isLoading}
+                error={error}
               />
             </div>
           </div>
         )}
 
-        {analyzeMutation.isPending && (
+        {isLoading && (
           <div className="flex flex-col items-center justify-center py-24 gap-4">
             <Loader2 className="w-10 h-10 text-primary animate-spin" data-testid="icon-loading" />
-            <p className="text-muted-foreground font-medium">Analyzing repository...</p>
+            <p className="text-muted-foreground font-medium">
+              {analyzeMutation.isPending ? "Analyzing repository..." : "Analyzing profile..."}
+            </p>
             <p className="text-xs text-muted-foreground">Fetching data from GitHub API</p>
           </div>
         )}
 
-        {result && !analyzeMutation.isPending && (
+        {showRepoResults && repoResult && (
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <img
-                  src={result.repo.owner.avatar_url}
-                  alt={result.repo.owner.login}
+                  src={repoResult.repo.owner.avatar_url}
+                  alt={repoResult.repo.owner.login}
                   className="w-10 h-10 rounded-md"
                   data-testid="img-owner-avatar"
                 />
                 <div>
                   <h2 className="text-xl font-semibold tracking-tight" data-testid="text-repo-name">
-                    {result.repo.full_name}
+                    {repoResult.repo.full_name}
                   </h2>
-                  {result.repo.description && (
+                  {repoResult.repo.description && (
                     <p className="text-sm text-muted-foreground line-clamp-1" data-testid="text-repo-description">
-                      {result.repo.description}
+                      {repoResult.repo.description}
                     </p>
                   )}
                 </div>
               </div>
               <div className="w-full sm:w-auto sm:max-w-md">
-                <RepoInput
-                  onSubmit={(url) => analyzeMutation.mutate(url)}
-                  isLoading={analyzeMutation.isPending}
-                  error={analyzeMutation.error?.message || null}
+                <ScanInput
+                  onSubmitRepo={handleAnalyzeRepo}
+                  onSubmitProfile={handleAnalyzeProfile}
+                  isLoading={isLoading}
+                  error={error}
                   compact
                 />
               </div>
@@ -112,20 +158,65 @@ export default function Dashboard() {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 space-y-6">
-                <RepoStats repo={result.repo} />
+                <RepoStats repo={repoResult.repo} />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <LanguageChart languages={result.languages} />
-                  <CommitActivity activity={result.commitActivity} />
+                  <LanguageChart languages={repoResult.languages} />
+                  <CommitActivity activity={repoResult.commitActivity} />
                 </div>
-                <TechStackView items={result.techStack} />
-                <FileTreeView tree={result.tree} />
-                <ReadmeSummaryView readme={result.readme} />
+                <TechStackView items={repoResult.techStack} />
+                <FileTreeView tree={repoResult.tree} />
+                <ReadmeSummaryView readme={repoResult.readme} />
               </div>
               <div className="space-y-6">
-                <RepoScoreCard score={result.score} />
-                {result.complexity && <ComplexityAnalyzer complexity={result.complexity} />}
-                {result.health && <HealthMonitor health={result.health} />}
-                <ContributorsView contributors={result.contributors} />
+                <RepoScoreCard score={repoResult.score} />
+                {repoResult.complexity && <ComplexityAnalyzer complexity={repoResult.complexity} />}
+                {repoResult.health && <HealthMonitor health={repoResult.health} />}
+                <ContributorsView contributors={repoResult.contributors} />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showProfileResults && profileResult && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <User className="w-5 h-5 text-muted-foreground" />
+                <h2 className="text-xl font-semibold tracking-tight" data-testid="text-profile-heading">
+                  Profile Analysis
+                </h2>
+              </div>
+              <div className="w-full sm:w-auto sm:max-w-md">
+                <ScanInput
+                  onSubmitRepo={handleAnalyzeRepo}
+                  onSubmitProfile={handleAnalyzeProfile}
+                  isLoading={isLoading}
+                  error={error}
+                  compact
+                />
+              </div>
+            </div>
+
+            <ProfileHeader
+              user={profileResult.user}
+              totalStars={profileResult.totalStars}
+              totalForks={profileResult.totalForks}
+              accountAgeDays={profileResult.accountAgeDays}
+            />
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 space-y-6">
+                <ProfileRepos
+                  repos={profileResult.repos}
+                  onAnalyzeRepo={handleAnalyzeRepo}
+                />
+                <ProfileActivity timeline={profileResult.activityTimeline} />
+              </div>
+              <div className="space-y-6">
+                <ProfileScoreCard score={profileResult.profileScore} />
+                <ProfileLanguages
+                  languages={profileResult.languages}
+                />
               </div>
             </div>
           </div>

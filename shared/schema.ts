@@ -7,7 +7,15 @@ export const analyzeRequestSchema = z.object({
   ),
 });
 
+export const profileRequestSchema = z.object({
+  username: z.string().min(1, "Username is required").refine(
+    (val) => /^[\w.-]+$/.test(val.replace(/^(https?:\/\/)?(www\.)?github\.com\//, "").replace(/\/$/, "")),
+    "Invalid GitHub username"
+  ),
+});
+
 export type AnalyzeRequest = z.infer<typeof analyzeRequestSchema>;
+export type ProfileRequest = z.infer<typeof profileRequestSchema>;
 
 export interface RepoDetails {
   name: string;
@@ -111,4 +119,60 @@ export interface AnalysisResult {
   commitActivity: number[];
   complexity: ProjectComplexity;
   health: RepoHealth;
+}
+
+export interface GitHubUserProfile {
+  login: string;
+  name: string | null;
+  avatar_url: string;
+  html_url: string;
+  bio: string | null;
+  company: string | null;
+  location: string | null;
+  blog: string | null;
+  twitter_username: string | null;
+  public_repos: number;
+  public_gists: number;
+  followers: number;
+  following: number;
+  created_at: string;
+}
+
+export interface UserRepoSummary {
+  name: string;
+  full_name: string;
+  html_url: string;
+  description: string | null;
+  stargazers_count: number;
+  forks_count: number;
+  language: string | null;
+  updated_at: string;
+  topics: string[];
+  archived: boolean;
+  fork: boolean;
+}
+
+export interface ProfileAnalysisResult {
+  user: GitHubUserProfile;
+  repos: UserRepoSummary[];
+  totalStars: number;
+  totalForks: number;
+  languages: LanguageBreakdown;
+  topLanguages: string[];
+  accountAgeDays: number;
+  avgStarsPerRepo: number;
+  profileScore: ProfileScore;
+  activityTimeline: { month: string; repos: number }[];
+}
+
+export interface ProfileScore {
+  total: number;
+  label: "Outstanding" | "Strong" | "Growing" | "Beginner";
+  breakdown: {
+    repos: number;
+    stars: number;
+    followers: number;
+    diversity: number;
+    consistency: number;
+  };
 }
