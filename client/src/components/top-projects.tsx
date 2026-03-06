@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { HiringInsights } from "@shared/schema";
-import { Trophy, Star } from "lucide-react";
+import { Trophy, Star, Pin } from "lucide-react";
 
 interface TopProjectsProps {
   projects: HiringInsights["topProjects"];
@@ -24,11 +24,11 @@ export function TopProjects({ projects, onAnalyzeRepo, ownerLogin }: TopProjects
         {projects.map((project, i) => (
           <div
             key={project.name}
-            className="flex items-start gap-3 p-3 rounded-md bg-muted/30"
+            className={`flex items-start gap-3 p-3 rounded-md ${project.pinned ? "bg-primary/5 border border-primary/10" : "bg-muted/30"}`}
             data-testid={`card-top-project-${i}`}
           >
             <div className="flex items-center justify-center w-7 h-7 rounded-md bg-primary/10 text-primary text-xs font-bold shrink-0">
-              {i + 1}
+              {project.pinned ? <Pin className="w-3.5 h-3.5" /> : i + 1}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap mb-0.5">
@@ -40,6 +40,12 @@ export function TopProjects({ projects, onAnalyzeRepo, ownerLogin }: TopProjects
                 >
                   {project.name}
                 </button>
+                {project.pinned && (
+                  <Badge variant="secondary" className="text-[9px] gap-0.5" data-testid={`badge-pinned-${i}`}>
+                    <Pin className="w-2.5 h-2.5" />
+                    Pinned
+                  </Badge>
+                )}
                 {project.language && (
                   <Badge variant="outline" className="text-[10px] font-mono">{project.language}</Badge>
                 )}

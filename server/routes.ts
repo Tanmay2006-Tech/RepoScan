@@ -339,9 +339,29 @@ function parseReadme(raw: string): ReadmeSummary {
   return { raw, description, installation, usage };
 }
 
+async function fetchPinnedRepoNames(username: string): Promise<string[]> {
+  try {
+    const res = await fetch(`https://github.com/${username}`, {
+      headers: { "User-Agent": "repo-intelligence-dashboard" },
+    });
+    if (!res.ok) return [];
+    const html = await res.text();
+    const pinned: string[] = [];
+    const regex = /class="repo"[^>]*>([^<]+)<\/span>/g;
+    let match;
+    while ((match = regex.exec(html)) !== null) {
+      pinned.push(match[1].trim());
+    }
+    return pinned;
+  } catch {
+    return [];
+  }
+}
+
 function generateHiringInsights(
   user: GitHubUserProfile,
   repos: UserRepoSummary[],
+  allReposIncludingForks: UserRepoSummary[],
   totalStars: number,
   totalForks: number,
   topLanguages: string[],
@@ -349,6 +369,7 @@ function generateHiringInsights(
   avgStarsPerRepo: number,
   profileScore: ProfileScore,
   activityTimeline: { month: string; repos: number }[],
+  pinnedRepoNames: string[],
 ): HiringInsights {
   const strengths: string[] = [];
   const concerns: string[] = [];
@@ -395,6 +416,34 @@ function generateHiringInsights(
   if (descRatio < 0.3 && repos.length >= 3) concerns.push("Most repositories lack descriptions — may indicate limited documentation habits");
   if (user.followers === 0 && repos.length >= 5) concerns.push("No followers despite having multiple projects");
 
+  const redFlags: string[] = [];
+  const forkCount = allReposIncludingForks.filter(r => r.fork).length;
+  const totalRepoCount = allReposIncludingForks.length;
+  if (totalRepoCount > 0 && forkCount / totalRepoCount > 0.7) {
+    redFlags.push("Over 70% of repositories are forks — limited original work");
+  }
+  if (activeMonths === 0 && accountYears >= 1) {
+    redFlags.push("No activity in the last 6 months — account may be inactive");
+  }
+  const emptyRepos = repos.filter(r => !r.language && !r.description);
+  if (repos.length >= 3 && emptyRepos.length / repos.length > 0.5) {
+    redFlags.push("Many repositories appear empty or uninitialized");
+  }
+  const recentMonthsActivity = activityTimeline.slice(-3);
+  const olderMonthsActivity = activityTimeline.slice(-12, -3);
+  const recentSum = recentMonthsActivity.reduce((s, m) => s + m.repos, 0);
+  const olderSum = olderMonthsActivity.reduce((s, m) => s + m.repos, 0);
+  if (recentSum > 10 && olderSum <= 2 && repos.length > 5) {
+    redFlags.push("Sudden spike in recent activity after long inactivity — possible resume padding");
+  }
+  if (repos.length === 0 && accountYears >= 2) {
+    redFlags.push("Account exists for " + accountYears + " years but has no original repositories");
+  }
+  const archivedCount = repos.filter(r => r.archived).length;
+  if (repos.length >= 5 && archivedCount / repos.length > 0.6) {
+    redFlags.push("Majority of repositories are archived — may indicate abandoned projects");
+  }
+
   let repoQuality: HiringInsights["repoQuality"];
   if (avgStarsPerRepo >= 10 || (descRatio >= 0.7 && repos.length >= 5)) repoQuality = "High";
   else if (avgStarsPerRepo >= 2 || descRatio >= 0.5) repoQuality = "Above Average";
@@ -411,14 +460,21 @@ function generateHiringInsights(
   else if (topLanguages.length >= 2) projectDiversity = "Moderate";
   else projectDiversity = "Narrow";
 
+  const pinnedSet = new Set(pinnedRepoNames.map(n => n.toLowerCase()));
   const topProjects = [...repos]
-    .sort((a, b) => b.stargazers_count - a.stargazers_count)
-    .slice(0, 5)
+    .sort((a, b) => {
+      const aPinned = pinnedSet.has(a.name.toLowerCase()) ? 1 : 0;
+      const bPinned = pinnedSet.has(b.name.toLowerCase()) ? 1 : 0;
+      if (bPinned !== aPinned) return bPinned - aPinned;
+      return b.stargazers_count - a.stargazers_count;
+    })
+    .slice(0, 6)
     .map(r => ({
       name: r.name,
       stars: r.stargazers_count,
       language: r.language,
       description: r.description,
+      pinned: pinnedSet.has(r.name.toLowerCase()),
     }));
 
   let recommendation: HiringInsights["recommendation"];
@@ -455,6 +511,7 @@ function generateHiringInsights(
     recommendation,
     strengths: strengths.slice(0, 8),
     concerns: concerns.slice(0, 5),
+    redFlags: redFlags.slice(0, 5),
     experienceLevel,
     primarySkills: topLanguages.slice(0, 6),
     repoQuality,
@@ -709,9 +766,11 @@ export async function registerRoutes(
         },
       };
 
+      const pinnedRepoNames = await fetchPinnedRepoNames(username);
+
       const hiringInsights = generateHiringInsights(
-        user, ownRepos, totalStars, totalForks, topLanguages,
-        accountAgeDays, avgStarsPerRepo, profileScore, activityTimeline
+        user, ownRepos, repos, totalStars, totalForks, topLanguages,
+        accountAgeDays, avgStarsPerRepo, profileScore, activityTimeline, pinnedRepoNames
       );
 
       const result: ProfileAnalysisResult = {

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import type { AnalysisResult, ProfileAnalysisResult } from "@shared/schema";
+import type { AnalysisResult, ProfileAnalysisResult, ProfileScore } from "@shared/schema";
 import { ScanInput } from "@/components/scan-input";
 import { RepoStats } from "@/components/repo-stats";
 import { RepoScoreCard } from "@/components/repo-score";
@@ -20,7 +20,13 @@ import { ProfileActivity } from "@/components/profile-activity";
 import { HiringAssessment } from "@/components/hiring-assessment";
 import { TopProjects } from "@/components/top-projects";
 import { SkillsOverview } from "@/components/skills-overview";
-import { Loader2, GitBranch, User, FileText } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { TeamFit } from "@/components/team-fit";
+import { ScoringWeights } from "@/components/scoring-weights";
+import { CompareCandidates } from "@/components/compare-candidates";
+import { exportProfilePDF, exportRepoPDF } from "@/lib/export-pdf";
+import { Loader2, GitBranch, User, FileText, Download, UserPlus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 type ViewMode = "idle" | "repo" | "profile";
 
@@ -28,6 +34,8 @@ export default function Dashboard() {
   const [viewMode, setViewMode] = useState<ViewMode>("idle");
   const [repoResult, setRepoResult] = useState<AnalysisResult | null>(null);
   const [profileResult, setProfileResult] = useState<ProfileAnalysisResult | null>(null);
+  const [compareList, setCompareList] = useState<ProfileAnalysisResult[]>([]);
+  const [customScore, setCustomScore] = useState<{ total: number; label: ProfileScore["label"] } | null>(null);
 
   const analyzeMutation = useMutation({
     mutationFn: async (url: string) => {
@@ -38,6 +46,7 @@ export default function Dashboard() {
       setRepoResult(data);
       setProfileResult(null);
       setViewMode("repo");
+      setCustomScore(null);
     },
   });
 
@@ -50,6 +59,7 @@ export default function Dashboard() {
       setProfileResult(data);
       setRepoResult(null);
       setViewMode("profile");
+      setCustomScore(null);
     },
   });
 
@@ -68,33 +78,48 @@ export default function Dashboard() {
     profileMutation.mutate(username);
   };
 
+  const handleAddToCompare = () => {
+    if (!profileResult) return;
+    const alreadyAdded = compareList.some(c => c.user.login === profileResult.user.login);
+    if (alreadyAdded || compareList.length >= 4) return;
+    setCompareList([...compareList, profileResult]);
+  };
+
+  const handleRemoveFromCompare = (index: number) => {
+    setCompareList(compareList.filter((_, i) => i !== index));
+  };
+
   const showHero = viewMode === "idle" && !isLoading;
   const showRepoResults = viewMode === "repo" && repoResult && !isLoading;
   const showProfileResults = viewMode === "profile" && profileResult && !isLoading;
+  const isInCompareList = profileResult ? compareList.some(c => c.user.login === profileResult.user.login) : false;
 
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-9 h-9 rounded-md bg-primary text-primary-foreground">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M8 3H5a2 2 0 0 0-2 2v3" />
-                <path d="M16 3h3a2 2 0 0 1 2 2v3" />
-                <path d="M8 21H5a2 2 0 0 1-2-2v-3" />
-                <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
-                <circle cx="12" cy="12" r="4" />
-                <path d="M15 15l2.5 2.5" />
-              </svg>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-9 h-9 rounded-md bg-primary text-primary-foreground">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M8 3H5a2 2 0 0 0-2 2v3" />
+                  <path d="M16 3h3a2 2 0 0 1 2 2v3" />
+                  <path d="M8 21H5a2 2 0 0 1-2-2v-3" />
+                  <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+                  <circle cx="12" cy="12" r="4" />
+                  <path d="M15 15l2.5 2.5" />
+                </svg>
+              </div>
+              <div>
+                <h1 className="text-lg font-semibold tracking-tight" data-testid="text-app-title">
+                  RepoScan
+                </h1>
+                <p className="text-xs text-muted-foreground">
+                  GitHub Hiring & Repository Intelligence
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-lg font-semibold tracking-tight" data-testid="text-app-title">
-                RepoScan
-              </h1>
-              <p className="text-xs text-muted-foreground">
-                GitHub Hiring & Repository Intelligence
-              </p>
-            </div>
+            <ThemeToggle />
           </div>
         </div>
       </header>
@@ -154,14 +179,26 @@ export default function Dashboard() {
                   )}
                 </div>
               </div>
-              <div className="w-full sm:w-auto sm:max-w-md">
-                <ScanInput
-                  onSubmitRepo={handleAnalyzeRepo}
-                  onSubmitProfile={handleAnalyzeProfile}
-                  isLoading={isLoading}
-                  error={error}
-                  compact
-                />
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => exportRepoPDF(repoResult)}
+                  className="gap-1.5"
+                  data-testid="button-export-repo-pdf"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Export PDF
+                </Button>
+                <div className="w-full sm:w-auto sm:max-w-md">
+                  <ScanInput
+                    onSubmitRepo={handleAnalyzeRepo}
+                    onSubmitProfile={handleAnalyzeProfile}
+                    isLoading={isLoading}
+                    error={error}
+                    compact
+                  />
+                </div>
               </div>
             </div>
 
@@ -200,14 +237,37 @@ export default function Dashboard() {
                   </p>
                 </div>
               </div>
-              <div className="w-full sm:w-auto sm:max-w-md">
-                <ScanInput
-                  onSubmitRepo={handleAnalyzeRepo}
-                  onSubmitProfile={handleAnalyzeProfile}
-                  isLoading={isLoading}
-                  error={error}
-                  compact
-                />
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => exportProfilePDF(profileResult)}
+                  className="gap-1.5"
+                  data-testid="button-export-profile-pdf"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Export PDF
+                </Button>
+                <Button
+                  variant={isInCompareList ? "secondary" : "outline"}
+                  size="sm"
+                  onClick={handleAddToCompare}
+                  disabled={isInCompareList || compareList.length >= 4}
+                  className="gap-1.5"
+                  data-testid="button-add-compare"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  {isInCompareList ? "Added" : "Compare"}
+                </Button>
+                <div className="w-full sm:w-auto sm:max-w-md">
+                  <ScanInput
+                    onSubmitRepo={handleAnalyzeRepo}
+                    onSubmitProfile={handleAnalyzeProfile}
+                    isLoading={isLoading}
+                    error={error}
+                    compact
+                  />
+                </div>
               </div>
             </div>
 
@@ -230,6 +290,10 @@ export default function Dashboard() {
                   onAnalyzeRepo={handleAnalyzeRepo}
                   ownerLogin={profileResult.user.login}
                 />
+                <TeamFit
+                  candidateSkills={profileResult.hiringInsights.primarySkills}
+                  candidateLanguages={profileResult.languages}
+                />
                 <ProfileRepos
                   repos={profileResult.repos}
                   onAnalyzeRepo={handleAnalyzeRepo}
@@ -237,7 +301,13 @@ export default function Dashboard() {
                 <ProfileActivity timeline={profileResult.activityTimeline} />
               </div>
               <div className="space-y-6">
-                <ProfileScoreCard score={profileResult.profileScore} />
+                <ProfileScoreCard
+                  score={customScore ? { ...profileResult.profileScore, total: customScore.total, label: customScore.label } : profileResult.profileScore}
+                />
+                <ScoringWeights
+                  breakdown={profileResult.profileScore.breakdown}
+                  onScoreChange={(total, label) => setCustomScore({ total, label })}
+                />
                 <SkillsOverview
                   primarySkills={profileResult.hiringInsights.primarySkills}
                   languages={profileResult.languages}
@@ -245,6 +315,16 @@ export default function Dashboard() {
                 />
               </div>
             </div>
+          </div>
+        )}
+
+        {compareList.length >= 2 && (
+          <div className="mt-8">
+            <CompareCandidates
+              candidates={compareList}
+              onRemove={handleRemoveFromCompare}
+              onClear={() => setCompareList([])}
+            />
           </div>
         )}
       </main>

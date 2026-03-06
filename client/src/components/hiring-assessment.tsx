@@ -10,6 +10,7 @@ import {
   Star,
   Users,
   FolderGit2,
+  AlertOctagon,
 } from "lucide-react";
 
 interface HiringAssessmentProps {
@@ -71,6 +72,23 @@ export function HiringAssessment({ insights, candidateName }: HiringAssessmentPr
           <MetricPill label="Collaboration" value={insights.collaborationIndicator} icon={Users} />
           <MetricPill label="Diversity" value={insights.projectDiversity} icon={FolderGit2} />
         </div>
+
+        {insights.redFlags && insights.redFlags.length > 0 && (
+          <div className="rounded-md border border-destructive/20 bg-destructive/5 p-3">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-destructive mb-2 flex items-center gap-1.5">
+              <AlertOctagon className="w-3.5 h-3.5" />
+              Red Flags
+            </h4>
+            <div className="space-y-1.5">
+              {insights.redFlags.map((f, i) => (
+                <div key={i} className="flex items-start gap-2 text-xs" data-testid={`text-red-flag-${i}`}>
+                  <AlertTriangle className="w-3.5 h-3.5 text-destructive/70 shrink-0 mt-0.5" />
+                  <span className="text-foreground">{f}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {insights.strengths.length > 0 && (
           <div>
