@@ -14,7 +14,7 @@ import type {
   HiringInsights,
   ContributionDay,
   SkillDomain,
-} from "../../shared/schema";
+} from "./schema";
 
 const GITHUB_API = "https://api.github.com";
 

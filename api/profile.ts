@@ -1,12 +1,12 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { profileRequestSchema } from "../shared/schema";
+import { profileRequestSchema } from "./_lib/schema";
 import type {
   GitHubUserProfile,
   UserRepoSummary,
   LanguageBreakdown,
   ProfileScore,
   ProfileAnalysisResultFull,
-} from "../shared/schema";
+} from "./_lib/schema";
 import {
   githubFetch,
   fetchPinnedRepoNames,

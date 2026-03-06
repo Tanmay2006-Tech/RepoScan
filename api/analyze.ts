@@ -1,12 +1,12 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { analyzeRequestSchema } from "../shared/schema";
+import { analyzeRequestSchema } from "./_lib/schema";
 import type {
   RepoDetails,
   Contributor,
   LanguageBreakdown,
   TreeItem,
   AnalysisResult,
-} from "../shared/schema";
+} from "./_lib/schema";
 import {
   githubFetch,
   parseGitHubUrl,
