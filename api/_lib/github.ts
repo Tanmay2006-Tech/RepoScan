@@ -18,25 +18,34 @@ import type {
 
 const GITHUB_API = "https://api.github.com";
 
-export async function githubFetch(path: string, retries = 0): Promise<any> {
+export async function githubFetch(path: string, retries = 0, skipAuth = false): Promise<any> {
   const headers: Record<string, string> = {
     Accept: "application/vnd.github.v3+json",
     "User-Agent": "repo-intelligence-dashboard",
   };
   const token = process.env.GITHUB_TOKEN;
-  if (token) {
+  if (token && !skipAuth) {
     headers.Authorization = `Bearer ${token}`;
   }
   const res = await fetch(`${GITHUB_API}${path}`, { headers });
   if (res.status === 202 && retries < 2) {
     await new Promise((r) => setTimeout(r, 2000));
-    return githubFetch(path, retries + 1);
+    return githubFetch(path, retries + 1, skipAuth);
   }
   if (!res.ok) {
+    if (res.status === 401 && token && !skipAuth) {
+      return githubFetch(path, retries, true);
+    }
     if (res.status === 403) {
       const remaining = res.headers.get("x-ratelimit-remaining");
       if (remaining === "0") {
-        throw new Error("GitHub API rate limit exceeded. Try again later or add a GITHUB_TOKEN.");
+        if (token && !skipAuth) {
+          return githubFetch(path, retries, true);
+        }
+        throw new Error("GitHub API rate limit exceeded. Try again later.");
+      }
+      if (token && !skipAuth) {
+        return githubFetch(path, retries, true);
       }
     }
     if (res.status === 404) {
