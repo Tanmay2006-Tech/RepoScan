@@ -38,12 +38,12 @@ export function ReadmeSummaryView({ readme }: ReadmeSummaryViewProps) {
           {tabs.map((tab) => (
             <TabsContent key={tab.id} value={tab.id}>
               <div
-                className="prose prose-sm dark:prose-invert max-w-none bg-muted/30 rounded-md p-4 max-h-64 overflow-y-auto"
+                className="rounded-md border bg-card p-4 max-h-80 overflow-y-auto"
                 data-testid={`content-${tab.id}`}
               >
-                <pre className="whitespace-pre-wrap font-mono text-xs leading-relaxed text-foreground">
+                <div className="whitespace-pre-wrap text-sm leading-relaxed text-card-foreground">
                   {tab.content}
-                </pre>
+                </div>
               </div>
             </TabsContent>
           ))}
