@@ -1,8 +1,8 @@
-🚀 RepoScan
+# 🚀 RepoScan
 
-AI-powered GitHub Repository Analyzer that scans repositories, evaluates project health, and generates actionable insights for developers.
+> AI-powered GitHub Repository Analyzer that scans repositories, evaluates project health, and generates actionable insights for developers.
 
-📖 Overview
+## 📖 Overview
 
 RepoScan helps developers, recruiters, and open-source maintainers quickly understand the quality and health of GitHub repositories.
 
@@ -10,91 +10,140 @@ Instead of manually checking stars, commits, documentation, issues, and project 
 
 Whether you're evaluating an open-source project, reviewing a candidate's portfolio, or analyzing your own repositories, RepoScan gives you a clear snapshot of repository quality.
 
-🔗 GitHub Repository: RepoScan
+🔗 GitHub Repository: https://github.com/Tanmay2006-Tech/RepoScan
 
-✨ Features
-🔍 Analyze GitHub repositories using repository URLs
-📊 Repository health scoring system
-⭐ Evaluate popularity and community engagement
-📝 Check documentation quality
-🛠️ Assess project structure and maintainability
-🚀 Generate AI-powered insights and recommendations
-📈 Visual health metrics dashboard
-🔐 Secure GitHub API integration
-⚡ Fast and responsive user experience
-🏗️ Tech Stack
-Frontend
-React.js
-TypeScript
-Tailwind CSS
-Vite
-Backend
-Node.js
-Express.js
-APIs & Services
-GitHub REST API
-AI-powered analysis engine
-Deployment
-Render
-GitHub
-📸 Screenshots
+---
 
-Add screenshots of your dashboard, repository analysis page, and health reports here.
+## ✨ Features
 
+- 🔍 Analyze GitHub repositories using repository URLs
+- 📊 Repository health scoring system
+- ⭐ Evaluate popularity and community engagement
+- 📝 Check documentation quality
+- 🛠️ Assess project structure and maintainability
+- 🚀 Generate AI-powered insights and recommendations
+- 📈 Visual health metrics dashboard
+- 🔐 Secure GitHub API integration
+- ⚡ Fast and responsive user experience
+
+---
+
+## 🏗️ Tech Stack
+
+### Frontend
+- React.js
+- TypeScript
+- Tailwind CSS
+- Vite
+
+### Backend
+- Node.js
+- Express.js
+
+### APIs & Services
+- GitHub REST API
+- AI-powered analysis engine
+
+### Deployment
+- Render
+- GitHub
+
+---
+
+## 📸 Screenshots
+
+> Add screenshots of your dashboard, repository analysis page, and health reports here.
+
+```md
 ![Dashboard](./screenshots/dashboard.png)
 
 ![Repository Analysis](./screenshots/analysis.png)
 
 ![Health Report](./screenshots/report.png)
-🚀 Getting Started
-1. Clone the Repository
+```
+
+---
+
+## 🚀 Getting Started
+
+### 1. Clone the Repository
+
+```bash
 git clone https://github.com/Tanmay2006-Tech/RepoScan.git
 
 cd RepoScan
-2. Install Dependencies
+```
+
+### 2. Install Dependencies
+
+```bash
 npm install
-3. Configure Environment Variables
+```
 
-Create a .env file:
+### 3. Configure Environment Variables
 
+Create a `.env` file:
+
+```env
 VITE_GITHUB_TOKEN=your_github_token
 OPENAI_API_KEY=your_openai_api_key
-4. Start Development Server
+```
+
+### 4. Start Development Server
+
+```bash
 npm run dev
+```
 
 Application will run on:
 
+```bash
 http://localhost:5173
-📊 Repository Health Metrics
+```
+
+---
+
+## 📊 Repository Health Metrics
 
 RepoScan evaluates repositories using factors such as:
 
-Documentation Quality
-Commit Activity
-Open Issues
-Repository Popularity
-Contributor Activity
-Project Structure
-Maintenance Status
-Release Frequency
+- Documentation Quality
+- Commit Activity
+- Open Issues
+- Repository Popularity
+- Contributor Activity
+- Project Structure
+- Maintenance Status
+- Release Frequency
 
 Each repository receives an overall health score that helps users quickly identify project quality.
 
-🎯 Use Cases
-Developers
-Analyze your own projects
-Improve repository quality
-Track maintainability
-Recruiters
-Evaluate candidate portfolios
-Assess project maturity
-Open Source Contributors
-Discover healthy projects
-Compare repositories before contributing
-Teams
-Audit organization repositories
-Maintain engineering standards
-📂 Project Structure
+---
+
+## 🎯 Use Cases
+
+### Developers
+- Analyze your own projects
+- Improve repository quality
+- Track maintainability
+
+### Recruiters
+- Evaluate candidate portfolios
+- Assess project maturity
+
+### Open Source Contributors
+- Discover healthy projects
+- Compare repositories before contributing
+
+### Teams
+- Audit organization repositories
+- Maintain engineering standards
+
+---
+
+## 📂 Project Structure
+
+```bash
 RepoScan/
 │
 ├── src/
@@ -109,32 +158,61 @@ RepoScan/
 ├── assets/
 ├── package.json
 └── README.md
-🔮 Future Improvements
-Repository comparison mode
-AI-generated code quality reports
-Contributor analytics
-Organization-wide scanning
-Historical repository tracking
-Export reports as PDF
-CI/CD integration support
-🤝 Contributing
+```
+
+---
+
+## 🔮 Future Improvements
+
+- Repository comparison mode
+- AI-generated code quality reports
+- Contributor analytics
+- Organization-wide scanning
+- Historical repository tracking
+- Export reports as PDF
+- CI/CD integration support
+
+---
+
+## 🤝 Contributing
 
 Contributions are welcome!
 
-Fork the repository
-Create a feature branch
+1. Fork the repository
+2. Create a feature branch
+
+```bash
 git checkout -b feature/amazing-feature
-Commit changes
+```
+
+3. Commit changes
+
+```bash
 git commit -m "Add amazing feature"
-Push branch
+```
+
+4. Push branch
+
+```bash
 git push origin feature/amazing-feature
-Open a Pull Request
-📜 License
+```
+
+5. Open a Pull Request
+
+---
+
+## 📜 License
 
 This project is licensed under the MIT License.
 
-👨‍💻 Author
+---
 
-Tanmay Tripathi
+## 👨‍💻 Author
+
+**Tanmay Tripathi**
+
+
+
+---
 
 ⭐ If you found RepoScan useful, consider giving it a star on GitHub!
